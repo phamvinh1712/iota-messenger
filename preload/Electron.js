@@ -21,29 +21,6 @@ const capitalize = (string) => {
   return string.charAt(0).toUpperCase() + string.slice(1).toLowerCase();
 };
 
-/**
- * Format iota value to thousand units
- * @param {number} iota - Value in iotas
- * @returns {string} - Formatted value
- */
-const formatIotas = (iota) => {
-  if (!iota) {
-    return '0i';
-  }
-  const units = ['i', 'Ki', 'Mi', 'Gi', 'Ti'];
-  const length = Math.floor(iota.toString().length / 3);
-  const pow = 1000 ** length;
-  const value = parseFloat((length !== 0 ? iota / pow : iota).toPrecision(2));
-  return value + units[length];
-};
-
-let locales = {
-  multipleTx: 'You received multiple transactions to {{account}}',
-  valueTx: 'You received {{value}} to {{account}}',
-  messageTx: 'You received a message to {{account}}',
-  confirmedIn: 'Incoming {{value}} transaction was confirmed at {{account}}',
-  confirmedOut: 'Outgoing {{value}} transaction was confirmed at {{account}}',
-};
 
 let onboardingSeed = null;
 let onboardingGenerated = false;

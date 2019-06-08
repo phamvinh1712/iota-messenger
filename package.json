@@ -1,7 +1,7 @@
 {
   "name": "iota-messenger",
   "productName": "IotaMessenger",
-  "version": "0.1",
+  "version": "1.0.0",
   "description": "Messenger app based on IOTA",
   "scripts": {
     "build": "concurrently \"yarn build-main\" \"yarn build-renderer\"",
@@ -111,7 +111,7 @@
   },
   "author": {
     "name": "Vinh Pham",
-    "email": "phamvinh1712@gmail.com",
+    "email": "phamvinh1712@gmail.com"
   },
   "license": "MIT",
   "keywords": [
