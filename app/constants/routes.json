@@ -1,4 +1,6 @@
 {
-  "LANDING": "/",
-  "MAIN" : "/main"
+  "LANDING": "/landing",
+  "MAIN" : "/main",
+  "LOGIN" : "/landing/login",
+  "REGISTER" : "/landing/register"
 }
