@@ -7,7 +7,6 @@ import Main from './components/main/Index';
 
 export default () => (
   <App>
-    test
     <Link to={routes.MAIN}> Main</Link>
     <Link to={routes.LANDING}> LANDING</Link>
     <Switch>

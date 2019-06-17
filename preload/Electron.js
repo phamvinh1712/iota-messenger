@@ -11,7 +11,6 @@ import { byteToTrit, byteToChar } from 'libs/iota/converter';
 import { removeNonAlphaNumeric } from 'libs/utils';
 import { moment } from 'libs/exports';
 
-import kdbx from '../libs/kdbx';
 import Entangled from '../libs/Entangled';
 import ledger from '../hardware/Ledger';
 import Realm from '../libs/Realm';
@@ -409,57 +408,6 @@ const Electron = {
     remote.getCurrentWindow().webContents.send(type, payload);
   },
 
-  /**
-   * Export SeedVault file
-   * @param {array} - Seed object array
-   * @param {string} - Plain text password to use for SeedVault
-   * @returns {undefined}
-   */
-  exportSeeds: async (seeds, password) => {
-    try {
-      const content = await kdbx.exportVault(seeds, password);
-      let prefix = 'SeedVault';
-      if (seeds.length === 1) {
-        prefix = removeNonAlphaNumeric(seeds[0].title, 'SeedVault').trim();
-      }
-      const path = await remote.dialog.showSaveDialog(remote.getCurrentWindow(), {
-        title: 'Export keyfile',
-        defaultPath: `${prefix}-${moment().format('YYYYMMDD-HHmm')}.kdbx`,
-        buttonLabel: 'Export',
-        filters: [{ name: 'SeedVault File', extensions: ['kdbx'] }],
-      });
-
-      if (!path) {
-        throw Error('Export cancelled');
-      }
-
-      fs.writeFileSync(path, Buffer.from(content));
-
-      return false;
-    } catch (error) {
-      return error.message;
-    }
-  },
-
-  /**
-   * Decrypt SeedVault file
-   * @param {buffer} buffer - SeedVault file content
-   * @param {string} - Plain text password for SeedVailt decryption
-   * @returns {array} Seed object array
-   */
-  importSeed: async (buffer, password) => {
-    const seeds = await kdbx.importVault(buffer, password);
-    return seeds;
-  },
-
-  /**
-   * Check if buffer is a valid SeedVault file
-   * @param {buffer} buffer - SeedVault file content
-   * @returns {boolean}
-   */
-  validateVault: (buffer) => {
-    return kdbx.checkFormat(buffer);
-  },
 
   /**
    * Create and show a native notification based on new transactions
@@ -499,72 +447,6 @@ const Electron = {
 
     notification.onclick = () => {
       remote.getCurrentWindow().webContents.send('account.switch', accountName);
-    };
-  },
-
-  /**
-   * Set native menu and notification locales
-   * @param {function} t - i18n locale helper
-   * @returns {undefiend}
-   */
-  changeLanguage: (t) => {
-    ipc.send('menu.language', {
-      about: t('settings:aboutTrinity'),
-      errorLog: t('notificationLog:errorLog'),
-      checkUpdate: t('checkForUpdates'),
-      sendFeedback: 'Send feedback',
-      settings: capitalize(t('home:settings')),
-      accountSettings: t('settings:accountManagement'),
-      accountName: t('addAdditionalSeed:accountName'),
-      viewSeed: t('accountManagement:viewSeed'),
-      viewAddresses: t('accountManagement:viewAddresses'),
-      tools: t('accountManagement:tools'),
-      newAccount: t('accountManagement:addNewAccount'),
-      language: t('languageSetup:language'),
-      node: t('node'),
-      currency: t('settings:currency'),
-      theme: t('settings:theme'),
-      changePassword: t('settings:changePassword'),
-      advanced: t('settings:advanced'),
-      hide: t('settings:hide'),
-      hideOthers: t('settings:hideOthers'),
-      showAll: t('settings:showAll'),
-      quit: t('settings:quit'),
-      edit: t('settings:edit'),
-      undo: t('settings:undo'),
-      redo: t('settings:redo'),
-      cut: t('settings:cut'),
-      copy: t('settings:copy'),
-      paste: t('settings:paste'),
-      selectAll: t('settings:selectAll'),
-      account: t('account'),
-      balance: capitalize(t('home:balance')),
-      send: capitalize(t('home:send')),
-      receive: capitalize(t('home:receive')),
-      history: capitalize(t('home:history')),
-      logout: t('settings:logout'),
-      help: t('help'),
-      logoutConfirm: t('logoutConfirmationModal:logoutConfirmation'),
-      yes: t('yes'),
-      no: t('no'),
-      updates: {
-        errorRetrievingUpdateData: t('updates:errorRetrievingUpdateData'),
-        errorRetrievingUpdateDataExplanation: t('updates:errorRetrievingUpdateDataExplanation'),
-        noUpdatesAvailable: t('updates:noUpdatesAvailable'),
-        noUpdatesAvailableExplanation: t('updates:noUpdatesAvailableExplanation'),
-        newVersionAvailable: t('updates:newVersionAvailable'),
-        newVersionAvailableExplanation: t('updates:newVersionAvailableExplanation'),
-        installUpdate: t('updates:installUpdate'),
-        installUpdateExplanation: t('updates:installUpdateExplanation'),
-      },
-    });
-
-    locales = {
-      multipleTx: t('notifications:multipleTx', { account: '{{account}}' }),
-      valueTx: t('notifications:valueTx', { account: '{{account}}', value: '{{value}}' }),
-      messageTx: t('notifications:messageTx', { account: '{{account}}', value: '{{value}}' }),
-      confirmedIn: t('notifications:confirmedIn', { account: '{{account}}', value: '{{value}}' }),
-      confirmedOut: t('notifications:confirmedOut', { account: '{{account}}', value: '{{value}}' }),
     };
   },
 

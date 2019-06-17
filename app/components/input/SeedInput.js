@@ -1,17 +1,17 @@
 import React, { useState } from 'react';
-import { InputAdornment, withStyles } from '@material-ui/core';
 import TextField from '@material-ui/core/TextField';
 import PropTypes from 'prop-types';
-import VisibilityOff from '@material-ui/icons/VisibilityOff';
+import { InputAdornment, withStyles } from '@material-ui/core';
 import Visibility from '@material-ui/icons/Visibility';
+import VisibilityOff from '@material-ui/icons/VisibilityOff';
+
 
 const styles = theme => ({
   eye: {
     cursor: 'pointer'
   }
 });
-
-const PasswordInput = props => {
+const SeedInput = props => {
   const [masked, setMasked] = useState(true);
 
   const togglePasswordMasked = () => {
@@ -27,6 +27,7 @@ const PasswordInput = props => {
       label={label}
       fullWidth
       autoFocus
+      variant="outlined"
       InputProps={{
         endAdornment: (
           <InputAdornment position="end">
@@ -48,11 +49,11 @@ const PasswordInput = props => {
   );
 };
 
-PasswordInput.propTypes = {
+SeedInput.propTypes = {
   classes: PropTypes.object.isRequired,
   label: PropTypes.string.isRequired,
   onChange: PropTypes.func.isRequired,
   value: PropTypes.string.isRequired
 };
 
-export default withStyles(styles)(PasswordInput);
+export default withStyles(styles)(SeedInput);
