@@ -20,6 +20,7 @@ export default function Intro({classes}) {
             characters long, using only letters A-Z or the number 9
           </Typography>
         </Paper>
+        <p></p>
         <Grid container spacing={2}>
           <Grid item xs>
             <Button fullWidth variant="contained">
