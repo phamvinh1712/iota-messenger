@@ -2,7 +2,6 @@
 import React, { Component } from 'react';
 import { Provider, type Store } from 'react-redux';
 import { ConnectedRouter } from 'connected-react-router';
-import { BrowserRouter as Router } from 'react-router-dom';
 
 import Routes from '../Routes';
 
