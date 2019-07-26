@@ -13,6 +13,7 @@
 import { app, BrowserWindow } from 'electron';
 import { autoUpdater } from 'electron-updater';
 import log from 'electron-log';
+import path from 'path';
 import MenuBuilder from './menu';
 
 export default class AppUpdater {
@@ -73,6 +74,12 @@ app.on('ready', async () => {
     height: 728,
     minWidth: 500,
     minHeight: 720,
+    webPreferences: {
+      // nodeIntegration: false,
+      preload: path.join(__dirname, './preload/development.js')
+      // disableBlinkFeatures: 'Auxclick',
+      // webviewTag: false,
+    }
   });
 
   mainWindow.loadURL(`file://${__dirname}/app.html`);

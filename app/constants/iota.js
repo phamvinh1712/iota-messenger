@@ -29,3 +29,5 @@ export const EMPTY_TRANSACTION_TRYTES = '9'.repeat(TRANSACTION_TRYTES_SIZE);
 export const EMPTY_TRANSACTION_MESSAGE = 'Empty';
 
 export const IOTA_DENOMINATIONS = ['i', 'Ki', 'Mi', 'Gi', 'Ti'];
+
+export const ALIAS_REALM = 'realm_enc_key';

@@ -26,7 +26,6 @@ const PasswordInput = props => {
       value={value}
       label={label}
       fullWidth
-      autoFocus
       InputProps={{
         endAdornment: (
           <InputAdornment position="end">

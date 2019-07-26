@@ -1,12 +1,13 @@
-import { MAX_SEED_LENGTH } from '../constants/iota';
-// import { ALIAS_REALM } from 'libs/realm';
-/**
- * Generates a new seed
- *
- * @method generateNewSeed
- * @param {function} randomBytesFn
- *
- * @returns {Promise<string>}
+import { MAX_SEED_LENGTH, ALIAS_REALM } from '../constants/iota';
+
+export const MAIN_ACCOUNT = 'IOTA-Messenger';
+export const MAX_ACC_LENGTH = 250;
+const ACCOUNT_PREFIX = 'account';
+/*
+ From A-Z and 0 there are 27 characters
+  Uint8Array() creates array of value from 0-256, 243 is the closest number to 256
+  that can be divided by 27. Therefore, numbers that larger than 243 must be
+  skip to make the seed completely random
  */
 export const generateNewSeed = async randomBytesFn => {
   const charset = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ9';
@@ -20,16 +21,6 @@ export const generateNewSeed = async randomBytesFn => {
   return seed;
 };
 
-/**
- * Randomises seed characters
- *
- * @method randomiseSeedCharacter
- * @param {string} seed
- * @param {number} charId
- * @param {function} randomBytesFn
- *
- * @returns {Promise<string>}
- */
 export const randomiseSeedCharacter = async (seed, charId, randomBytesFn) => {
   const charset = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ9';
   let updatedSeed = '';
@@ -46,18 +37,7 @@ export const randomiseSeedCharacter = async (seed, charId, randomBytesFn) => {
   }
   return updatedSeed;
 };
-/* global Electron */
 
-export const ACC_MAIN = 'Trinity';
-// Maximum allowed account title
-export const MAX_ACC_LENGTH = 250;
-
-/**
- * Create random byte array
- * @param {number} Length - Random number array length.
- * @param {number} Max - Random byte max range
- * @returns {array} Random number array
- */
 export const randomBytes = (size, max = 256) => {
   if (size !== parseInt(size, 10) || size < 0) {
     return false;
@@ -76,12 +56,6 @@ export const randomBytes = (size, max = 256) => {
   return Array.from(bytes);
 };
 
-/**
- * Encrypt plain text
- * @param {any} contentPlain - Content to encrypt
- * @param {buffer} hash - Argon2 hash for encryption
- * @returns {string} Ecnrypted initialization vector + content
- */
 export const encrypt = async (contentPlain, hash) => {
   const content = new TextEncoder().encode(JSON.stringify(contentPlain));
 
@@ -101,12 +75,6 @@ export const encrypt = async (contentPlain, hash) => {
   return `${ivHex}|${cipherHex}`;
 };
 
-/**
- * Decrypt cyphertext
- * @param {string} cipherText - Encrypted initialization vector + content
- * @param {buffer} hash - Argon2 hash for decryption
- * @returns {object} Derypted content
- */
 export const decrypt = async (cipherText, hash) => {
   const cipherParts = cipherText.split('|');
 
@@ -136,19 +104,15 @@ export const decrypt = async (cipherText, hash) => {
   }
 };
 
-/**
- * Sets up main account in keychain
- * @param {string} Password - Plain text password for decryption
- * @returns {boolean}
- */
-export const initVault = async password => {
+export const initVault = async passwordHash => {
   try {
-    const vault = await Electron.readKeychain(ACC_MAIN);
-    const decryptedVault = vault === null ? {} : await decrypt(vault, password);
+    const vault = await Electron.readKeychain(MAIN_ACCOUNT);
+    const decryptedVault =
+      vault === null ? {} : await decrypt(vault, passwordHash);
 
-    const updatedVault = await encrypt(decryptedVault, password);
+    const updatedVault = await encrypt(decryptedVault, passwordHash);
 
-    await Electron.setKeychain(ACC_MAIN, updatedVault);
+    await Electron.setKeychain(MAIN_ACCOUNT, updatedVault);
 
     return true;
   } catch (err) {
@@ -156,23 +120,15 @@ export const initVault = async password => {
   }
 };
 
-/**
- * Set and store random salt to keychain
- */
 export const initKeychain = async () => {
   await clearVault([ALIAS_REALM]);
   const salt = crypto.getRandomValues(new Uint8Array(16));
   const saltHex = salt.toString();
-  await Electron.setKeychain(`${ACC_MAIN}-salt`, saltHex);
+  await Electron.setKeychain(`${MAIN_ACCOUNT}-salt`, saltHex);
 };
 
-/**
- * Check for valid vault key
- * @param {array} Key - Account decryption key
- * @returns {boolean | string}
- */
 export const authorize = async key => {
-  const vault = await Electron.readKeychain(ACC_MAIN);
+  const vault = await Electron.readKeychain(MAIN_ACCOUNT);
 
   if (!vault) {
     throw new Error('Local storage not available');
@@ -185,11 +141,6 @@ export const authorize = async key => {
   }
 };
 
-/**
- * Clear the vault
- * @param {array} keepAccounts - Account names that should not be cleared
- * @returns {boolean} True if vault cleared
- */
 export const clearVault = async (keepAccounts = []) => {
   const vault = await Electron.listKeychain();
   const accounts = Object.keys(vault);
@@ -203,11 +154,6 @@ export const clearVault = async (keepAccounts = []) => {
   return true;
 };
 
-/**
- * Hash text using SHA-256
- * @param {string} Password - Plain text to hash
- * @returns {string} SHA-256 hash
- */
 export const sha256 = async inputPlain => {
   if (typeof inputPlain !== 'string' || inputPlain.length < 1) {
     return false;
@@ -220,17 +166,12 @@ export const sha256 = async inputPlain => {
   return plainHash;
 };
 
-/**
- * Hash text using Argon2
- * @param {string} Password - Plain text to hash
- * @returns {string} Argon2 raw hash
- */
 export const hash = async inputPlain => {
   if (typeof inputPlain !== 'string' || inputPlain.length < 1) {
     return false;
   }
 
-  const saltHex = await Electron.readKeychain(`${ACC_MAIN}-salt`);
+  const saltHex = await Electron.readKeychain(`${MAIN_ACCOUNT}-salt`);
 
   if (!saltHex) {
     throw new Error('Keychain unavailable');
@@ -246,11 +187,6 @@ export const hash = async inputPlain => {
   return hash;
 };
 
-/**
- * Convert buffer to plain text
- * @param {buffer} - Input buffer
- * @returns {string} Output string
- */
 const bufferToHex = buffer => {
   const view = new Uint8Array(buffer);
   let result = '';
@@ -261,4 +197,88 @@ const bufferToHex = buffer => {
   }
 
   return result;
+};
+
+export const getRealmEncryptionKey = () => {
+  return Electron.readKeychain(ALIAS_REALM).then(encryptionKey => {
+    if (encryptionKey === null || encryptionKey.split(',').length !== 64) {
+      const key = Uint8Array.from(randomBytes(64));
+
+      return Electron.setKeychain(ALIAS_REALM, key.toString()).then(() => key);
+    }
+
+    return Uint8Array.from(encryptionKey.split(','));
+  });
+};
+
+export const addAccount = async (username, seed, passwordHash) => {
+  const usernameHash = await sha256(`${ACCOUNT_PREFIX}-${username}`);
+
+  const vault = await encrypt(seed, passwordHash);
+  await Electron.setKeychain(usernameHash, vault);
+
+  return true;
+};
+
+export const removeAccount = async usernameHash => {
+  if (usernameHash) {
+    throw new Error('Account not selected');
+  }
+
+  const isRemoved = await Electron.removeKeychain(usernameHash);
+
+  if (!isRemoved) {
+    throw new Error('Incorrect seed name');
+  }
+
+  return true;
+};
+
+export const renameAccount = async (username, usernameHash, passwordHash) => {
+  const newID = await sha256(`${ACCOUNT_PREFIX}-${username}`);
+
+  const vault = await Electron.readKeychain(usernameHash);
+
+  if (!vault) {
+    throw new Error('Incorrect seed name');
+  }
+
+  await decrypt(vault, passwordHash);
+
+  await Electron.removeKeychain(usernameHash);
+  await Electron.setKeychain(newID, vault);
+
+  return true;
+};
+
+export const updatePassword = async (hash, hashNew) => {
+  const vault = await Electron.listKeychain();
+
+  if (!vault) {
+    throw new Error('Local storage not available');
+  }
+
+  const accounts = Object.keys(vault);
+
+  if (!accounts.length) {
+    return true;
+  }
+
+  for (let i = 0; i < accounts.length; i++) {
+    const account = vault[i];
+
+    if (
+      account.account === `${MAIN_ACCOUNT}-salt` ||
+      account.account === ALIAS_REALM
+    ) {
+      continue;
+    }
+
+    const decryptedVault = await decrypt(account.password, hash);
+    const encryptedVault = await encrypt(decryptedVault, hashNew);
+
+    await Electron.setKeychain(account.account, encryptedVault);
+  }
+
+  return true;
 };

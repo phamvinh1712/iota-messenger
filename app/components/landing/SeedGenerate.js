@@ -1,19 +1,42 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import Container from '@material-ui/core/Container';
-import { Typography } from '@material-ui/core';
 import Button from '@material-ui/core/Button';
 import Fab from '@material-ui/core/Fab';
 import Refresh from '@material-ui/icons/Refresh';
+import Save from '@material-ui/icons/Save';
+import Grid from '@material-ui/core/Grid';
+import Dialog from '@material-ui/core/Dialog';
+import DialogActions from '@material-ui/core/DialogActions';
+import DialogContent from '@material-ui/core/DialogContent';
+import DialogContentText from '@material-ui/core/DialogContentText';
+import DialogTitle from '@material-ui/core/DialogTitle';
+import withStyles from '@material-ui/core/styles/withStyles';
+import { useDispatch } from 'react-redux';
 
+import { setOnboardingSeed } from '../../actions/account';
 import { MAX_SEED_LENGTH } from '../../constants/iota';
-import { randomBytes } from '../../libs/crypto';
+import {
+  addAccount,
+  hash,
+  initKeychain,
+  initVault,
+  randomBytes
+} from '../../libs/crypto';
 import { byteToChar } from '../../libs/converter';
 import styles from './landingStyle';
-import Grid from '@material-ui/core/Grid';
+import routes from '../../constants/routes';
+import PropTypes from 'prop-types';
+import PasswordInput from '../input/PasswordInput';
+import { notify } from '../../actions/notification';
+import zxcvbn from 'zxcvbn';
 
-const SeedGenerate = ({ classes }) => {
+const SeedGenerate = props => {
+  const dispatch = useDispatch();
   const [seed, setSeed] = useState(randomBytes(MAX_SEED_LENGTH, 27));
-
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [openDialog, setOpenDialog] = useState(false);
+  const { classes } = props;
   const randomPosition = e => {
     if (e) {
       e.preventDefault();
@@ -29,6 +52,56 @@ const SeedGenerate = ({ classes }) => {
     setSeed(randomBytes(MAX_SEED_LENGTH, 27));
   };
 
+  const onContinue = () => {
+    dispatch(setOnboardingSeed(seed, true));
+    props.history.push(routes.SEEDCONFIRM);
+  };
+
+  const onBack = () => {
+    dispatch(setOnboardingSeed(null));
+    props.history.push(routes.INTRO);
+  };
+
+  const onSeedSave = async () => {
+    if (!password.length) {
+      dispatch(notify('error', 'Password is empty'));
+      return;
+    }
+
+    if (!confirmPassword.length) {
+      dispatch(notify('error', 'Confirm password is empty'));
+      return;
+    }
+
+    if (password !== confirmPassword) {
+      dispatch(notify('error', 'Confirm password does not match'));
+      return;
+    }
+
+    const pwEvaluation = zxcvbn(password);
+    if (pwEvaluation.score < 4) {
+      let errorMessage = 'Please choose a stronger password';
+      errorMessage += pwEvaluation.feedback.warning
+        ? `\nWarning: ${pwEvaluation.feedback.warning}`
+        : '';
+      errorMessage += pwEvaluation.feedback.suggestions.length
+        ? `\nSuggestions: ${pwEvaluation.feedback.suggestions.join(' ')}`
+        : '';
+      dispatch(notify('error', errorMessage.trim()));
+      return;
+    }
+    const error = await Electron.exportSeedToFile(seed, password);
+
+    if (error) {
+      dispatch(notify('error', 'Export failed'));
+    } else {
+      dispatch(notify('success', 'Export success'));
+    }
+    setPassword('');
+    setConfirmPassword('');
+    setOpenDialog(false);
+  };
+
   return (
     <Container component="div" maxWidth="xl">
       <div className={classes.paper}>
@@ -39,7 +112,7 @@ const SeedGenerate = ({ classes }) => {
             return (
               <Button
                 value={index}
-                key={`${index}${c}`}
+                key={`${index}-${c}`}
                 onClick={randomPosition}
               >
                 {c}
@@ -47,26 +120,81 @@ const SeedGenerate = ({ classes }) => {
             );
           })}
         </div>
+        <div>
+          <Fab color="primary" aria-label="Reset" onClick={reGenerateSeed}>
+            <Refresh />
+          </Fab>
+          <span> </span>
+          <Fab
+            color="primary"
+            aria-label="Save"
+            onClick={() => setOpenDialog(true)}
+          >
+            <Save />
+          </Fab>
+        </div>
 
-        <Fab color="primary" aria-label="Reset" onClick={reGenerateSeed}>
-          <Refresh />
-        </Fab>
         <p />
         <Grid container spacing={2}>
           <Grid item xs>
-            <Button fullWidth variant="contained">
+            <Button fullWidth variant="contained" onClick={onBack}>
               Go back
             </Button>
           </Grid>
           <Grid item xs>
-            <Button fullWidth variant="contained" color="primary">
+            <Button
+              fullWidth
+              variant="contained"
+              color="primary"
+              onClick={onContinue}
+            >
               Continue
             </Button>
           </Grid>
         </Grid>
       </div>
+      <Dialog
+        open={openDialog}
+        onClose={() => setOpenDialog(false)}
+        aria-labelledby="form-dialog-title"
+      >
+        <DialogTitle id="form-dialog-title">Seed save</DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            Your Seed can be saved to an encrypted file. Please set a password
+            for your file.
+          </DialogContentText>
+          <PasswordInput
+            label="Password"
+            name="password"
+            value={password}
+            onChange={setPassword}
+          />
+          <p />
+          <PasswordInput
+            label="Confirm password"
+            name="confirmPassword"
+            value={confirmPassword}
+            onChange={setConfirmPassword}
+          />
+          <p />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setOpenDialog(false)} color="primary">
+            Cancel
+          </Button>
+          <Button onClick={onSeedSave} color="primary">
+            Save
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Container>
   );
 };
-
-export default SeedGenerate;
+SeedGenerate.propTypes = {
+  classes: PropTypes.object.isRequired,
+  history: PropTypes.shape({
+    push: PropTypes.func.isRequired
+  }).isRequired
+};
+export default withStyles(styles)(SeedGenerate);
