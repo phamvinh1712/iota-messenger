@@ -4,6 +4,7 @@ import routes from './constants/routes';
 import App from './containers/App';
 import Landing from './components/landing/Index';
 import Main from './components/main/Index';
+import Notification from './components/notification/NotificationSnackbar';
 
 export default () => (
   <App>
@@ -13,5 +14,6 @@ export default () => (
       <Route path={routes.LANDING} component={Landing} />
       <Route path={routes.MAIN} component={Main} />
     </Switch>
+    <Notification />
   </App>
 );
