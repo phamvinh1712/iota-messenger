@@ -3,7 +3,7 @@ import { Switch, Route, Link } from 'react-router-dom';
 import routes from './constants/routes';
 import App from './containers/App';
 import Landing from './components/landing/Index';
-import Main from './components/main/Index';
+import Main from './components/main';
 import Notification from './components/notification/NotificationSnackbar';
 
 export default () => (
