@@ -179,8 +179,8 @@ export const localAttachToTangle = async (
 };
 
 export const settings = {
-  provider: 'https://nodes.devnet.iota.org:443',
-  // provider: 'https://nodes.thetangle.org:443',
+  // provider: 'https://nodes.devnet.iota.org:443',
+  provider: 'https://nodes.thetangle.org:443',
   // attachToTangle: localAttachToTangle
 };
 

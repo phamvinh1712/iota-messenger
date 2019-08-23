@@ -13,8 +13,6 @@ import {
 } from '../../../store/selectors/main';
 import { Conversation } from '../../../storage';
 
-const MY_USER_ID = 'apple';
-
 const MessageList = props => {
   const [messages, setMessages] = useState([]);
   const currentConversation = useSelector(getCurrentConversation);
