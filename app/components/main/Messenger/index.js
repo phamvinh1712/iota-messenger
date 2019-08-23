@@ -1,38 +1,35 @@
-import React, { Component } from 'react';
+import React from 'react';
+import LoadingOverlay from 'react-loading-overlay';
+import { useSelector } from 'react-redux';
 import ConversationList from '../ConversationList';
 import MessageList from '../MessageList';
 import style from './Messenger.css';
 
-export default class Messenger extends Component {
-  render() {
-    return (
-      <div className={style.messenger}>
-        {/* <Toolbar
-          title="Messenger"
-          leftItems={[
-            <ToolbarButton key="cog" icon="ion-ios-cog" />
-          ]}
-          rightItems={[
-            <ToolbarButton key="add" icon="ion-ios-add-circle-outline" />
-          ]}
-        /> */}
+const Messenger = () => {
+  const isLoading = useSelector(state => state.ui.loading);
 
-        {/* <Toolbar
-          title="Conversation Title"
-          rightItems={[
-            <ToolbarButton key="info" icon="ion-ios-information-circle-outline" />,
-            <ToolbarButton key="video" icon="ion-ios-videocam" />,
-            <ToolbarButton key="phone" icon="ion-ios-call" />
-          ]}
-        /> */}
-        <div className={`${style.scrollable} ${style.sidebar}`}>
+  return (
+    <div className={style.messenger}>
+      <div className={`${style.scrollable} ${style.sidebar}`}>
+        <LoadingOverlay
+          active={isLoading.conversationList}
+          spinner
+          text="Loading..."
+        >
           <ConversationList />
-        </div>
-
-        <div className={`${style.scrollable} ${style.content}`}>
-          <MessageList />
-        </div>
+        </LoadingOverlay>
       </div>
-    );
-  }
-}
+
+      <div className={`${style.scrollable} ${style.content}`}>
+        <LoadingOverlay
+          active={isLoading.messageList}
+          spinner
+          text="Loading..."
+        >
+          <MessageList />
+        </LoadingOverlay>
+      </div>
+    </div>
+  );
+};
+export default Messenger;

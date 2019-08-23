@@ -2,12 +2,14 @@
 import { combineReducers } from 'redux';
 import { connectRouter } from 'connected-react-router';
 import account from './account';
-import notification from './notification';
+import ui from './ui';
+import main from './main';
 
 export default function createRootReducer(history: History) {
   return combineReducers<{}, *>({
     router: connectRouter(history),
     account,
-    notification
+    ui,
+    main
   });
 }

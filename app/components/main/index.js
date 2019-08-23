@@ -1,10 +1,35 @@
-import React, { useState } from 'react';
+import React, { useEffect } from 'react';
+import { useSelector } from 'react-redux';
 import Messenger from './Messenger';
+import { getSeed } from '../../libs/crypto';
+import { getPasswordHash } from '../../store/selectors/main';
+import { getTransactionsFromAccount } from '../../libs/iota';
+import { fetchNewMessagesFromAllConversation } from '../../libs/conversation';
+
 const Main = () => {
+  const passwordHash = useSelector(getPasswordHash);
+
+  useEffect(() => {
+    let seed;
+    getSeed(passwordHash)
+      .then(result => {
+        seed = result;
+      })
+      .catch(error => console.log('Error getting seed', error));
+
+    const interval = setInterval(async () => {
+      await fetchNewMessagesFromAllConversation();
+      if (seed) {
+        await getTransactionsFromAccount(seed);
+      }
+    }, 2000);
+    return () => clearInterval(interval);
+  }, []);
+
   return (
-    <div>
+    <React.Fragment>
       <Messenger />
-    </div>
+    </React.Fragment>
   );
 };
 

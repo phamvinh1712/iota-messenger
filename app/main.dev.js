@@ -76,9 +76,10 @@ app.on('ready', async () => {
     minHeight: 720,
     webPreferences: {
       // nodeIntegration: false,
-      preload: path.join(__dirname, './preload/development.js')
+      preload: path.join(__dirname, './preload/development.js'),
       // disableBlinkFeatures: 'Auxclick',
       // webviewTag: false,
+      experimentalFeatures: true
     }
   });
 

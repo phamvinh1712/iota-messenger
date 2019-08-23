@@ -12,10 +12,17 @@ const styles = theme => ({
 });
 
 const PasswordInput = props => {
+  const { onEnter } = props;
   const [masked, setMasked] = useState(true);
 
   const togglePasswordMasked = () => {
     setMasked(!masked);
+  };
+
+  const handleTextFieldKeyDown = event => {
+    if (event.key == 'Enter') {
+      onEnter();
+    }
   };
 
   const { label, value, onChange, classes } = props;
@@ -23,6 +30,7 @@ const PasswordInput = props => {
     <TextField
       type={masked ? 'password' : 'text'}
       onChange={e => onChange(e.target.value)}
+      onKeyDown={handleTextFieldKeyDown}
       value={value}
       label={label}
       fullWidth

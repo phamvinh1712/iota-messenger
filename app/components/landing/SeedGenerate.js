@@ -13,7 +13,7 @@ import DialogTitle from '@material-ui/core/DialogTitle';
 import withStyles from '@material-ui/core/styles/withStyles';
 import { useDispatch } from 'react-redux';
 
-import { setOnboardingSeed } from '../../actions/account';
+import { setLandingSeed } from '../../store/actions/account';
 import { MAX_SEED_LENGTH } from '../../constants/iota';
 import {
   addAccount,
@@ -27,7 +27,7 @@ import styles from './landingStyle';
 import routes from '../../constants/routes';
 import PropTypes from 'prop-types';
 import PasswordInput from '../input/PasswordInput';
-import { notify } from '../../actions/notification';
+import { notify } from '../../store/actions/ui';
 import zxcvbn from 'zxcvbn';
 
 const SeedGenerate = props => {
@@ -53,12 +53,12 @@ const SeedGenerate = props => {
   };
 
   const onContinue = () => {
-    dispatch(setOnboardingSeed(seed, true));
+    dispatch(setLandingSeed(seed, true));
     props.history.push(routes.SEEDCONFIRM);
   };
 
   const onBack = () => {
-    dispatch(setOnboardingSeed(null));
+    dispatch(setLandingSeed(null));
     props.history.push(routes.INTRO);
   };
 

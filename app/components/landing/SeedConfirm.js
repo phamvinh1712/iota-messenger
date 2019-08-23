@@ -10,16 +10,16 @@ import styles from './landingStyle';
 import SeedInput from '../input/SeedInput';
 import routes from '../../constants/routes';
 import { MAX_SEED_LENGTH } from '../../constants/iota';
-import { notify } from '../../actions/notification';
-import { setOnboardingSeed } from '../../actions/account';
+import { notify } from '../../store/actions/ui';
+import { setLandingSeed } from '../../store/actions/account';
 
 const SeedConfirm = props => {
   const dispatch = useDispatch();
   const isGenerated = useSelector(
-    state => state.account.accountInfoDuringSetup.onboardingSeedGenerated
+    state => state.account.accountInfoDuringSetup.landingSeedGenerated
   );
   const generatedSeed = useSelector(
-    state => state.account.accountInfoDuringSetup.onboardingSeed
+    state => state.account.accountInfoDuringSetup.landingSeed
   );
 
   const [seed, setSeed] = useState([]);
@@ -38,7 +38,8 @@ const SeedConfirm = props => {
         dispatch(notify('error', 'Seed does not match'));
         return;
       }
-      dispatch(setOnboardingSeed(seed, false));
+    } else {
+      dispatch(setLandingSeed(seed, false));
     }
     props.history.push(routes.REGISTER);
   };

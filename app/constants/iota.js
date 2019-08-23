@@ -31,3 +31,6 @@ export const EMPTY_TRANSACTION_MESSAGE = 'Empty';
 export const IOTA_DENOMINATIONS = ['i', 'Ki', 'Mi', 'Gi', 'Ti'];
 
 export const ALIAS_REALM = 'realm_enc_key';
+export const DEFAULT_DEPTH = 4;
+export const DEFAULT_MIN_WEIGHT_MAGNITUDE = 14;
+export const ZMQ_DOMAIN = 'tcp://zmq.devnet.iota.org:5556';

@@ -4,7 +4,7 @@
 // const isObject = require('lodash/isObject');
 // const map = require('lodash/map');
 // const reduce = require('lodash/reduce');
-// const isString = require('lodash/isString');
+const isString = require('lodash/isString');
 // const keys = require('lodash/keys');
 // const filter = require('lodash/filter');
 // const transform = require('lodash/transform');
@@ -44,22 +44,21 @@
 //   return _renameObjectKeys(payload, keyMap);
 // };
 //
-// export const serialise = (data, ...options) => {
-//   if (!isString(data)) {
-//     return JSON.stringify(data, ...options);
-//   }
-//
-//   return data;
-// };
-//
-//
-// export const parse = (data) => {
-//   try {
-//     return JSON.parse(data);
-//   } catch (err) {
-//     return data;
-//   }
-// };
+const serialise = (data, ...options) => {
+  if (!isString(data)) {
+    return JSON.stringify(data, ...options);
+  }
+
+  return data;
+};
+
+const parse = data => {
+  try {
+    return JSON.parse(data);
+  } catch (err) {
+    return data;
+  }
+};
 //
 //
 // export const rearrangeObjectKeys = (obj, prop) => {
@@ -211,5 +210,7 @@ const removeNonAlphaNumeric = (source, fallback = '') => {
 };
 
 module.exports = {
-  removeNonAlphaNumeric
+  removeNonAlphaNumeric,
+  parse,
+  serialise
 };

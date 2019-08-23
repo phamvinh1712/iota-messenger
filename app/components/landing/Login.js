@@ -4,14 +4,23 @@ import Button from '@material-ui/core/Button';
 import LockOutlinedIcon from '@material-ui/icons/LockOutlined';
 import Container from '@material-ui/core/Container';
 import Typography from '@material-ui/core/Typography';
-
-import PasswordInput from '../input/PasswordInput';
-import styles from './landingStyle';
 import withStyles from '@material-ui/core/styles/withStyles';
-import { hash, authorize } from '../../libs/crypto';
-import { notify } from '../../actions/notification';
-import routes from '../../constants/routes';
 import { useDispatch } from 'react-redux';
+import PasswordInput from '../input/PasswordInput';
+
+import styles from './landingStyle';
+import { hash, authorize, getSeed } from '../../libs/crypto';
+import {
+  finishLoadingApp,
+  notify,
+  startLoadingApp
+} from '../../store/actions/ui';
+import routes from '../../constants/routes';
+import { setAppPassword } from '../../store/actions/main';
+import { Account } from '../../storage';
+import { setAccountInfo } from '../../store/actions/account';
+import { getContactRequest } from '../../libs/contact';
+import { getTransactionsFromAccount } from '../../libs/iota';
 
 const Login = props => {
   const dispatch = useDispatch();
@@ -22,21 +31,36 @@ const Login = props => {
     let passwordHash = null;
     let authorised = false;
 
+    dispatch(startLoadingApp());
+
     try {
       passwordHash = await hash(password);
     } catch (err) {
-      dispatch(notify('error', 'Error accessing keychain'));
+      dispatch(finishLoadingApp());
+      return dispatch(notify('error', 'Error accessing keychain'));
     }
 
     try {
       authorised = await authorize(passwordHash);
     } catch (err) {
-      dispatch(notify('error', 'Unrecognised password'));
+      dispatch(finishLoadingApp());
+      return dispatch(notify('error', 'Unrecognised password'));
     }
+
     if (authorised) {
+      dispatch(setAppPassword(passwordHash));
       setPassword('');
+
+      const { mamRoot, address, username } = Account.data;
+      dispatch(setAccountInfo({ mamRoot, address, username }));
+
+      const seed = await getSeed(passwordHash, 'string');
+      await getTransactionsFromAccount(seed);
+      await getContactRequest(passwordHash);
+      console.log('finished');
+      props.history.push(routes.MAIN);
     }
-    props.history.push(routes.MAIN);
+    return dispatch(finishLoadingApp());
   };
   return (
     <Container component="div" maxWidth="xs">
@@ -53,6 +77,7 @@ const Login = props => {
           name="password"
           value={password}
           onChange={setPassword}
+          onEnter={onSubmit}
         />
         <Button
           type="submit"

@@ -11,7 +11,7 @@ const moment = require('moment');
 const { byteToTrit, byteToChar, charToByte } = require('../libs/converter');
 const { removeNonAlphaNumeric } = require('../libs/utils');
 const kdbxweb = require('kdbxweb');
-// import Entangled from '../libs/Entangled';
+const Entangled = require('../libs/Entangled');
 const Realm = require('./Realm');
 const { version } = require('../../package.json');
 
@@ -84,6 +84,7 @@ const Electron = {
   },
 
   getUserDataPath: () => {
+    console.log(remote.app.getPath('userData'));
     return remote.app.getPath('userData');
   },
 

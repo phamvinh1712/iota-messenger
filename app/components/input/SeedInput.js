@@ -7,7 +7,7 @@ import VisibilityOff from '@material-ui/icons/VisibilityOff';
 import DropZone from 'react-dropzone';
 import { byteToChar, charToByte } from '../../libs/converter';
 import { useDispatch } from 'react-redux';
-import { notify } from '../../actions/notification';
+import { notify } from '../../store/actions/ui';
 import { MAX_SEED_LENGTH } from '../../constants/iota';
 import DialogTitle from '@material-ui/core/DialogTitle';
 import DialogContent from '@material-ui/core/DialogContent';

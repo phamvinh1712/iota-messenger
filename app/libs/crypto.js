@@ -1,4 +1,10 @@
 import { MAX_SEED_LENGTH, ALIAS_REALM } from '../constants/iota';
+import iota, { generateAddress } from './iota';
+import { Account } from '../storage';
+import { byteToTrit, byteToChar } from './converter';
+import { getMamRoot, updateMamChannel } from './mam';
+
+const NodeRSA = require('node-rsa');
 
 export const MAIN_ACCOUNT = 'IOTA-Messenger';
 export const MAX_ACC_LENGTH = 250;
@@ -212,10 +218,37 @@ export const getRealmEncryptionKey = () => {
 };
 
 export const addAccount = async (username, seed, passwordHash) => {
-  const usernameHash = await sha256(`${ACCOUNT_PREFIX}-${username}`);
+  const seedVault = await encrypt(seed, passwordHash);
+  await Electron.setKeychain(`${MAIN_ACCOUNT}-seed`, seedVault);
 
-  const vault = await encrypt(seed, passwordHash);
-  await Electron.setKeychain(usernameHash, vault);
+  const stringSeed = seed.map(byteToChar).join('');
+  const address = await generateAddress(stringSeed);
+
+  const { publicKey, privateKey } = generateKeyPair();
+
+  const privateKeyVault = await encrypt(privateKey, passwordHash);
+  await Electron.setKeychain(`${MAIN_ACCOUNT}-private-key`, privateKeyVault);
+
+  const sideKey = randomBytes(MAX_SEED_LENGTH, 27)
+    .map(byteToChar)
+    .join('');
+  const sideKeyVault = await encrypt(sideKey, passwordHash);
+  await Electron.setKeychain(`${MAIN_ACCOUNT}-side-key`, sideKeyVault);
+
+  let accountData = {
+    username,
+    publicKey,
+    address
+  };
+
+  const mamRoot = await updateMamChannel(accountData, stringSeed, 'private');
+
+  accountData = {
+    ...accountData,
+    sideKey,
+    mamRoot
+  };
+  Account.update(accountData);
 
   return true;
 };
@@ -281,4 +314,52 @@ export const updatePassword = async (hash, hashNew) => {
   }
 
   return true;
+};
+
+export const generateKeyPair = passwordHash => {
+  const rsa = new NodeRSA({ b: 512 });
+  const publicKey = rsa.exportKey('pkcs8-public-pem');
+  const privateKey = rsa.exportKey('pkcs8-private-pem');
+  return { publicKey, privateKey };
+};
+
+export const encryptRSA = (message, key, keyType) => {
+  const rsa = new NodeRSA();
+  rsa.importKey(key, `pkcs8-${keyType}-pem`);
+  if (keyType === 'private') {
+    return rsa.encryptPrivate(message);
+  }
+  return rsa.encrypt(message);
+};
+
+export const decryptRSA = (cipherMessage, key, keyType) => {
+  const rsa = new NodeRSA();
+  rsa.importKey(key, `pkcs8-${keyType}-pem`);
+  if (keyType === 'private') {
+    return rsa.decrypt(cipherMessage);
+  }
+  return rsa.decryptPublic(cipherMessage);
+};
+
+export const getSeed = async (passwordHash, format) => {
+  const vault = await Electron.readKeychain(`${MAIN_ACCOUNT}-seed`);
+
+  if (!vault) {
+    throw new Error('No seed');
+  }
+
+  const decryptedVault = await decrypt(vault, passwordHash);
+  if (format && format === 'string') {
+    return decryptedVault.map(byteToChar).join('');
+  }
+  return decryptedVault;
+};
+
+export const getKey = async (passwordHash, type) => {
+  const vault = await Electron.readKeychain(`${MAIN_ACCOUNT}-${type}-key`);
+  if (!vault) {
+    throw new Error(`No ${type} key`);
+  }
+  const decryptedVault = await decrypt(vault, passwordHash);
+  return decryptedVault;
 };
