@@ -87,7 +87,9 @@ class Conversation {
 
   static get keys() {
     const conversations = realm.objects('Conversation');
-    return conversations.keys;
+    if (conversations.length)
+      return conversations.map(conversation => conversation.mamRoot);
+    return [];
   }
 
   static getById(id) {
@@ -115,7 +117,10 @@ class Conversation {
 
   static addMessage(id, messageData) {
     const conversation = Conversation.getById(id);
-    realm.write(() => conversation.messages.push(messageData));
+    const { index } = messageData;
+    if (conversation && index >= conversation.messages.length) {
+      realm.write(() => conversation.messages.push(messageData));
+    }
   }
 
   static getDataAsArray() {

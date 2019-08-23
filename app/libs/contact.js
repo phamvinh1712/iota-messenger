@@ -58,8 +58,7 @@ export const sendContactRequest = async (passwordHash, mamRoot) => {
       Object.keys(conversation).forEach(key => {
         requestMessage[key] = encryptRSA(
           conversation[key],
-          contactInfo.publicKey,
-          'public'
+          contactInfo.publicKey
         );
       });
 
@@ -68,8 +67,7 @@ export const sendContactRequest = async (passwordHash, mamRoot) => {
 
       requestMessage.senderRoot = encryptRSA(
         getMamRoot(seed),
-        contactInfo.publicKey,
-        'public'
+        contactInfo.publicKey
       );
 
       console.log('Encrypted request message:', requestMessage);
@@ -86,6 +84,7 @@ export const sendContactRequest = async (passwordHash, mamRoot) => {
       sendTransfer(seed, transfer);
       await saveConversation(conversation, [{ mamRoot }], seed, sideKey);
     } catch (e) {
+      console.log(e);
       throw new Error(e);
     }
     return true;
@@ -102,8 +101,9 @@ export const decryptContactRequest = async (messageData, privateKey) => {
   ) {
     const decryptedData = {};
     Object.keys(messageData).forEach(key => {
-      decryptedData[key] = decryptRSA(messageData[key], privateKey, 'private');
+      decryptedData[key] = decryptRSA(messageData[key], privateKey);
     });
+    console.log('decryptedData', decryptedData);
     try {
       const sender = await fetchContactInfo(decryptedData.mamRoot);
       if (!sender) throw new Error('Sender is not real');

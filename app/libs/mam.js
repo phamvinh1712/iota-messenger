@@ -40,12 +40,17 @@ export const updateMamChannel = async (
   }
   const trytes = asciiToTrytes(JSON.stringify(data));
   const message = MAM.create(mamState, trytes);
-  await MAM.attach(
-    message.payload,
-    message.address,
-    DEFAULT_DEPTH,
-    DEFAULT_MIN_WEIGHT_MAGNITUDE
-  );
+  try{
+    await MAM.attach(
+      message.payload,
+      message.address,
+      DEFAULT_DEPTH,
+      DEFAULT_MIN_WEIGHT_MAGNITUDE
+    );
+  } catch (e) {
+    console.log(e);
+  }
+
   console.log('MAM state', root);
   return root;
 };

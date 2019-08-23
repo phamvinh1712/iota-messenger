@@ -7,7 +7,10 @@ import ToolbarButton from '../ToolbarButton';
 import Message from '../Message';
 
 import style from './MessageList.css';
-import { getCurrentConversation, getSelfMamRoot } from '../../../store/selectors/main';
+import {
+  getCurrentConversation,
+  getSelfMamRoot
+} from '../../../store/selectors/main';
 import { Conversation } from '../../../storage';
 
 const MY_USER_ID = 'apple';
@@ -31,12 +34,11 @@ const MessageList = props => {
     let i = 0;
     const renderedMessages = [];
     const messageCount = messages.length;
-
     while (i < messageCount) {
       const previous = messages[i - 1];
       const current = messages[i];
       const next = messages[i + 1];
-      const isMine = current.contact.mamRoot === selfMamRoot;
+      const isMine = current.sender.mamRoot === selfMamRoot;
       const currentMoment = moment(current.createdTime);
       let prevBySameAuthor = false;
       let nextBySameAuthor = false;
@@ -49,7 +51,7 @@ const MessageList = props => {
         const previousDuration = moment.duration(
           currentMoment.diff(previousMoment)
         );
-        prevBySameAuthor = previous.contact.mamRoot === current.contact.mamRoot;
+        prevBySameAuthor = previous.sender.mamRoot === current.sender.mamRoot;
 
         if (prevBySameAuthor && previousDuration.as('hours') < 1) {
           startsSequence = false;
@@ -63,7 +65,7 @@ const MessageList = props => {
       if (next) {
         const nextMoment = moment(next.createdTime);
         const nextDuration = moment.duration(nextMoment.diff(currentMoment));
-        nextBySameAuthor = next.contact.mamRoot === current.contact.mamRoot;
+        nextBySameAuthor = next.sender.mamRoot === current.sender.mamRoot;
 
         if (nextBySameAuthor && nextDuration.as('hours') < 1) {
           endsSequence = false;
@@ -99,7 +101,11 @@ const MessageList = props => {
 
       <div className={style.messageListContainer}>{renderMessages()}</div>
 
-      <Compose conversation={currentConversation} />
+      {currentConversation ? (
+        <Compose conversation={currentConversation} />
+      ) : (
+        ''
+      )}
     </div>
   );
 };

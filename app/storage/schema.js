@@ -26,20 +26,20 @@ export const ContactSchema = {
     mamRoot: 'string',
     publicKey: 'string',
     username: 'string',
-    avatar: 'string'
+    avatar: 'string?'
   }
 };
 
 export const MessageSchema = {
   name: 'Message',
-  primaryKey: 'messageRoot',
+  primaryKey: 'index',
   properties: {
     sender: 'Contact',
     content: 'string',
     createdTime: 'date',
-    messageRoot: 'string',
+    messageRoot: 'string?',
     index: 'int',
-    image: 'string'
+    image: 'string?'
   }
 };
 

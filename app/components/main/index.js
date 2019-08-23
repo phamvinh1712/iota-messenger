@@ -11,7 +11,7 @@ const Main = () => {
 
   useEffect(() => {
     let seed;
-    getSeed(passwordHash)
+    getSeed(passwordHash, 'string')
       .then(result => {
         seed = result;
       })
@@ -19,10 +19,10 @@ const Main = () => {
 
     const interval = setInterval(async () => {
       await fetchNewMessagesFromAllConversation();
-      if (seed) {
-        await getTransactionsFromAccount(seed);
-      }
-    }, 2000);
+      // if (seed) {
+      //   await getTransactionsFromAccount(seed);
+      // }
+    }, 5000);
     return () => clearInterval(interval);
   }, []);
 

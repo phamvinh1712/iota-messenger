@@ -1,13 +1,24 @@
 import { now } from 'moment';
 import { Account, Contact } from '../storage';
-import { decryptRSA, encryptRSA } from './crypto';
+import { verifySignatureRSA, signRSA } from './crypto';
 
-export const decryptMessage = ({ cipherMessage, senderRoot, createdTime }) => {
+export const decryptMessage = ({
+  message,
+  senderRoot,
+  createdTime,
+  signature
+}) => {
   const contact = Contact.getById(senderRoot);
   if (contact) {
     const { publicKey } = contact;
-    const message = decryptRSA(cipherMessage, publicKey, 'public');
-    return { sender: contact, content: message, createdTime };
+    console.log('Public key', publicKey);
+    if (verifySignatureRSA(message, signature, publicKey)) {
+      return {
+        sender: contact,
+        content: message,
+        createdTime: new Date(createdTime)
+      };
+    }
   }
   return null;
 };
@@ -19,8 +30,9 @@ export const decryptMessage = ({ cipherMessage, senderRoot, createdTime }) => {
  */
 export const createMessage = (message, privateKey) => {
   const { mamRoot } = Account.data;
-  const cipherMessage = encryptRSA(message, privateKey, 'private');
+  console.log('Private key', privateKey);
+  const signature = signRSA(message, privateKey);
   const createdTime = now();
 
-  return { cipherMessage, senderRoot: mamRoot, createdTime };
+  return { message, signature, senderRoot: mamRoot, createdTime };
 };

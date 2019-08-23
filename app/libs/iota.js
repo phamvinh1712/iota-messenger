@@ -29,7 +29,6 @@ export const getTransactionsFromAccount = seed =>
         }
         console.log(Account.data);
         resolve(true);
-
       })
       .catch(err => {
         reject(err);
@@ -168,7 +167,7 @@ export const localAttachToTangle = async (
       branchTransaction,
       minWeightMagnitude
     );
-    console.log(result);
+
     if (get(result, 'trytes') && get(result, 'transactionObjects')) {
       return result.trytes;
     }
@@ -180,9 +179,9 @@ export const localAttachToTangle = async (
 };
 
 export const settings = {
-  // provider: 'https://nodes.devnet.iota.org:443',
-  provider: 'https://nodes.thetangle.org:443',
-  attachToTangle: localAttachToTangle
+  provider: 'https://nodes.devnet.iota.org:443',
+  // provider: 'https://nodes.thetangle.org:443',
+  // attachToTangle: localAttachToTangle
 };
 
 const iota = composeAPI(settings);

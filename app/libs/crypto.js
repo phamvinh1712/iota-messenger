@@ -3,6 +3,7 @@ import iota, { generateAddress } from './iota';
 import { Account } from '../storage';
 import { byteToTrit, byteToChar } from './converter';
 import { getMamRoot, updateMamChannel } from './mam';
+import { trytesToAscii, asciiToTrytes } from '@iota/converter';
 
 const NodeRSA = require('node-rsa');
 
@@ -318,27 +319,34 @@ export const updatePassword = async (hash, hashNew) => {
 
 export const generateKeyPair = passwordHash => {
   const rsa = new NodeRSA({ b: 512 });
-  const publicKey = rsa.exportKey('pkcs8-public-pem');
-  const privateKey = rsa.exportKey('pkcs8-private-pem');
+  const publicKey = asciiToTrytes(rsa.exportKey('pkcs8-public-pem'));
+  const privateKey = asciiToTrytes(rsa.exportKey('pkcs8-private-pem'));
   return { publicKey, privateKey };
 };
 
-export const encryptRSA = (message, key, keyType) => {
+export const encryptRSA = (message, publicKey) => {
   const rsa = new NodeRSA();
-  rsa.importKey(key, `pkcs8-${keyType}-pem`);
-  if (keyType === 'private') {
-    return rsa.encryptPrivate(message);
-  }
+  rsa.importKey(trytesToAscii(publicKey), `pkcs8-public-pem`);
+
   return rsa.encrypt(message);
 };
 
-export const decryptRSA = (cipherMessage, key, keyType) => {
+export const decryptRSA = (cipherMessage, privateKey) => {
   const rsa = new NodeRSA();
-  rsa.importKey(key, `pkcs8-${keyType}-pem`);
-  if (keyType === 'private') {
-    return rsa.decrypt(cipherMessage);
-  }
-  return rsa.decryptPublic(cipherMessage);
+  rsa.importKey(trytesToAscii(privateKey), `pkcs8-private-pem`);
+  return rsa.decrypt(cipherMessage).toString('ascii');
+};
+
+export const signRSA = (message, privateKey) => {
+  const rsa = new NodeRSA();
+  rsa.importKey(trytesToAscii(privateKey), `pkcs8-private-pem`);
+  return rsa.sign(message);
+};
+
+export const verifySignatureRSA = (message, signature, publicKey) => {
+  const rsa = new NodeRSA();
+  rsa.importKey(trytesToAscii(publicKey), 'pkcs8-public-pem');
+  return rsa.verify(message, Buffer.from(signature.data));
 };
 
 export const getSeed = async (passwordHash, format) => {
