@@ -1,9 +1,10 @@
 {
-  "MAIN" : "/main",
+  "MAIN": "/main",
   "LANDING": "/landing",
-  "LOGIN" : "/landing/login",
-  "REGISTER" : "/landing/register",
+  "LOGIN": "/landing/login",
+  "REGISTER": "/landing/register",
   "INTRO": "/landing/intro",
   "SEEDGENERATE": "/landing/seed-generate",
-  "SEEDCONFIRM": "/landing/seed-confirm"
+  "SEEDCONFIRM": "/landing/seed-confirm",
+  "SETTINGS": "/settings"
 }

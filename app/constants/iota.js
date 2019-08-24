@@ -28,9 +28,12 @@ export const EMPTY_TRANSACTION_TRYTES = '9'.repeat(TRANSACTION_TRYTES_SIZE);
 
 export const EMPTY_TRANSACTION_MESSAGE = 'Empty';
 
-export const IOTA_DENOMINATIONS = ['i', 'Ki', 'Mi', 'Gi', 'Ti'];
-
 export const ALIAS_REALM = 'realm_enc_key';
+
 export const DEFAULT_DEPTH = 4;
+
 export const DEFAULT_MIN_WEIGHT_MAGNITUDE = 14;
-export const ZMQ_DOMAIN = 'tcp://zmq.devnet.iota.org:5556';
+
+export const DEFAULT_MAINNET_DOMAIN = 'https://nodes.thetangle.org:443';
+
+export const DEFAULT_DEVNET_DOMAIN = 'https://nodes.devnet.iota.org:443';

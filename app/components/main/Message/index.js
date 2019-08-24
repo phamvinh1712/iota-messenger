@@ -15,9 +15,7 @@ const Message = props => {
         `${endsSequence ? style.end : ''}`
       ].join(' ')}
     >
-      {showTimestamp && (
-        <div className={style.timestamp}>{friendlyTimestamp}</div>
-      )}
+      {showTimestamp && <div className={style.timestamp}>{friendlyTimestamp}</div>}
 
       <div className={style.bubbleContainer}>
         <div className={style.bubble} title={friendlyTimestamp}>

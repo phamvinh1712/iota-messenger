@@ -5,27 +5,25 @@ import LockOutlinedIcon from '@material-ui/icons/LockOutlined';
 import Container from '@material-ui/core/Container';
 import Typography from '@material-ui/core/Typography';
 import withStyles from '@material-ui/core/styles/withStyles';
-import { useDispatch } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import PasswordInput from '../input/PasswordInput';
 
 import styles from './landingStyle';
 import { hash, authorize, getSeed } from '../../libs/crypto';
-import {
-  finishLoadingApp,
-  notify,
-  startLoadingApp
-} from '../../store/actions/ui';
+import { finishLoadingApp, notify, startLoadingApp } from '../../store/actions/ui';
 import routes from '../../constants/routes';
 import { setAppPassword } from '../../store/actions/main';
 import { Account } from '../../storage';
 import { setAccountInfo } from '../../store/actions/account';
 import { getContactRequest } from '../../libs/contact';
-import { getTransactionsFromAccount } from '../../libs/iota';
+import { getTransactionsFromAccount, getIotaSettings } from '../../libs/iota';
+import { getSettings } from '../../store/selectors/settings';
 
 const Login = props => {
   const dispatch = useDispatch();
   const { classes } = props;
   const [password, setPassword] = useState('');
+  const iotaSettings = getIotaSettings(useSelector(getSettings));
 
   const onSubmit = async () => {
     let passwordHash = null;
@@ -55,7 +53,7 @@ const Login = props => {
       dispatch(setAccountInfo({ mamRoot, address, username }));
 
       const seed = await getSeed(passwordHash, 'string');
-      await getTransactionsFromAccount(seed);
+      await getTransactionsFromAccount(iotaSettings, seed);
       await getContactRequest(passwordHash);
       console.log('finished');
       props.history.push(routes.MAIN);
@@ -72,13 +70,7 @@ const Login = props => {
         <Typography component="h1" variant="h5">
           Sign in
         </Typography>
-        <PasswordInput
-          label="Password"
-          name="password"
-          value={password}
-          onChange={setPassword}
-          onEnter={onSubmit}
-        />
+        <PasswordInput label="Password" name="password" value={password} onChange={setPassword} onEnter={onSubmit} />
         <Button
           type="submit"
           fullWidth

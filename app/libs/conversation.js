@@ -1,19 +1,17 @@
 import MAM from '@iota/mam';
-import { now } from 'moment';
 import { trytesToAscii } from '@iota/converter';
-import { decryptRSA, randomBytes } from './crypto';
+import { randomBytes } from './crypto';
 import { MAX_SEED_LENGTH } from '../constants/iota';
 import { byteToChar } from './converter';
-import { settings } from './iota';
-import { Conversation, Contact } from '../storage';
+import { Conversation } from '../storage';
 import { updateMamChannel } from './mam';
 import { decryptMessage } from './message';
 
-export const createConversation = () => {
+export const createConversation = iotaSettings => {
   const sideKey = randomBytes(MAX_SEED_LENGTH, 27)
     .map(byteToChar)
     .join('');
-  let mamState = MAM.init(settings);
+  let mamState = MAM.init(iotaSettings);
   mamState = MAM.changeMode(mamState, 'restricted', sideKey);
   const mamRoot = MAM.getRoot(mamState);
   const newConversation = {
@@ -25,16 +23,7 @@ export const createConversation = () => {
   return newConversation;
 };
 
-export const joinConversation = async (conversationSeed, userRoot) => {
-  await updateMamChannel(userRoot, conversationSeed, 'private');
-};
-
-export const saveConversation = async (
-  conversation,
-  contacts,
-  seed,
-  sideKey
-) => {
+export const saveConversation = (conversation, contacts) => {
   Conversation.add(conversation);
 
   if (contacts && contacts.length) {
@@ -42,14 +31,13 @@ export const saveConversation = async (
       Conversation.addParticipant(conversation.mamRoot, contact.mamRoot);
     });
   }
-  const newConversation = { ...conversation, participants: contacts };
-  updateMamChannel(newConversation, seed, 'restricted', sideKey);
+  return { ...conversation, participants: contacts };
 };
 
-export const fetchNewMessagesFromConversation = async conversationRoot => {
+export const fetchNewMessagesFromConversation = async (iotaSettings, conversationRoot) => {
   const conversation = Conversation.getById(conversationRoot);
   console.log(conversation);
-  let mamState = MAM.init(settings, conversation.seed);
+  let mamState = MAM.init(iotaSettings, conversation.seed);
   mamState = MAM.changeMode(mamState, 'restricted', conversation.sideKey);
   let index = 0;
   if (conversation.messages.length) {
@@ -63,12 +51,7 @@ export const fetchNewMessagesFromConversation = async conversationRoot => {
     if (result && result.messages) {
       result.messages.forEach(message => {
         const parsedMessage = JSON.parse(trytesToAscii(message));
-        if (
-          parsedMessage.message &&
-          parsedMessage.senderRoot &&
-          parsedMessage.createdTime &&
-          parsedMessage.signature
-        ) {
+        if (parsedMessage.message && parsedMessage.senderRoot && parsedMessage.createdTime && parsedMessage.signature) {
           const messageObj = decryptMessage(parsedMessage);
 
           if (messageObj) {
@@ -84,9 +67,9 @@ export const fetchNewMessagesFromConversation = async conversationRoot => {
   }
 };
 
-export const fetchNewMessagesFromAllConversation = () => {
+export const fetchNewMessagesFromAllConversation = iotaSettings => {
   const conversationRoots = Conversation.keys;
   conversationRoots.forEach(key => {
-    fetchNewMessagesFromConversation(key);
+    fetchNewMessagesFromConversation(iotaSettings, key);
   });
 };

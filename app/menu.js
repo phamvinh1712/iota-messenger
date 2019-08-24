@@ -1,5 +1,5 @@
-// @flow
 import { app, Menu, shell, BrowserWindow } from 'electron';
+import routes from './constants/routes';
 
 export default class MenuBuilder {
   mainWindow: BrowserWindow;
@@ -7,6 +7,13 @@ export default class MenuBuilder {
   constructor(mainWindow: BrowserWindow) {
     this.mainWindow = mainWindow;
   }
+
+  navigate = path => {
+    const { mainWindow } = this;
+    if (mainWindow) {
+      mainWindow.webContents.send('menu', path);
+    }
+  };
 
   buildMenu() {
     if (
@@ -52,7 +59,7 @@ export default class MenuBuilder {
           selector: 'orderFrontStandardAboutPanel:'
         },
         { type: 'separator' },
-        { label: 'Services', submenu: [] },
+        { label: 'Settings', click: () => this.navigate(routes.SETTINGS) },
         { type: 'separator' },
         {
           label: 'Hide ElectronReact',
@@ -148,27 +155,9 @@ export default class MenuBuilder {
         {
           label: 'Learn More',
           click() {
-            shell.openExternal('http://electron.atom.io');
-          }
-        },
-        {
-          label: 'Documentation',
-          click() {
             shell.openExternal(
-              'https://github.com/atom/electron/tree/master/docs#readme'
+              'https://github.com/phamvinh1712/iota-messenger'
             );
-          }
-        },
-        {
-          label: 'Community Discussions',
-          click() {
-            shell.openExternal('https://discuss.atom.io/c/electron');
-          }
-        },
-        {
-          label: 'Search Issues',
-          click() {
-            shell.openExternal('https://github.com/atom/electron/issues');
           }
         }
       ]
@@ -188,6 +177,10 @@ export default class MenuBuilder {
           {
             label: '&Open',
             accelerator: 'Ctrl+O'
+          },
+          {
+            label: 'Settings',
+            click: () => this.navigate(routes.SETTINGS)
           },
           {
             label: '&Close',
@@ -245,27 +238,9 @@ export default class MenuBuilder {
           {
             label: 'Learn More',
             click() {
-              shell.openExternal('http://electron.atom.io');
-            }
-          },
-          {
-            label: 'Documentation',
-            click() {
               shell.openExternal(
-                'https://github.com/atom/electron/tree/master/docs#readme'
+                'https://github.com/phamvinh1712/iota-messenger'
               );
-            }
-          },
-          {
-            label: 'Community Discussions',
-            click() {
-              shell.openExternal('https://discuss.atom.io/c/electron');
-            }
-          },
-          {
-            label: 'Search Issues',
-            click() {
-              shell.openExternal('https://github.com/atom/electron/issues');
             }
           }
         ]

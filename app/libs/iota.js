@@ -1,18 +1,13 @@
 import { composeAPI } from '@iota/core';
 import { asciiToTrytes } from '@iota/converter';
-import {
-  asTransactionObject,
-  asTransactionTrytes
-} from '@iota/transaction-converter';
 import isFunction from 'lodash/isFunction';
-import assign from 'lodash/assign';
-import reduce from 'lodash/reduce';
-import { head, orderBy, get } from 'lodash';
+import { get } from 'lodash';
 import { DEFAULT_MIN_WEIGHT_MAGNITUDE, DEFAULT_DEPTH } from '../constants/iota';
 import { Account } from '../storage';
 
-export const getTransactionsFromAccount = seed =>
+export const getTransactionsFromAccount = (iotaSettings, seed) =>
   new Promise((resolve, reject) => {
+    const iota = getIOTA(iotaSettings);
     iota
       .getAccountData(seed, {
         start: 0,
@@ -36,7 +31,8 @@ export const getTransactionsFromAccount = seed =>
       });
   });
 
-export const generateAddress = async seed => {
+export const generateAddress = async (iotaSettings, seed) => {
+  const iota = getIOTA(iotaSettings);
   const addresses = await iota.getNewAddress(seed, {
     checksum: true,
     total: 1
@@ -49,19 +45,16 @@ export const generateAddress = async seed => {
       message: asciiToTrytes('Address to receive friend request')
     }
   ];
-  sendTransfer(seed, transfers);
+  sendTransfer(iotaSettings, seed, transfers);
   return address;
 };
 
-export const sendTransfer = (seed, transfers) => {
+export const sendTransfer = (iotaSettings, seed, transfers) => {
+  const iota = getIOTA(iotaSettings);
   iota
     .prepareTransfers(seed, transfers)
     .then(trytes => {
-      return iota.sendTrytes(
-        trytes,
-        DEFAULT_DEPTH,
-        DEFAULT_MIN_WEIGHT_MAGNITUDE
-      );
+      return iota.sendTrytes(trytes, DEFAULT_DEPTH, DEFAULT_MIN_WEIGHT_MAGNITUDE);
     })
     .then(result => console.log('Finish send trytes:', result))
     .catch(error => console.log('Send transfer error', error));
@@ -79,79 +72,7 @@ export const performPow = (
     return Promise.reject(new Error('POW function undefined'));
   }
 
-  return batchedPow
-    ? powFn(trytes, trunkTransaction, branchTransaction, minWeightMagnitude)
-    : performSequentialPow(
-        powFn,
-        getDigest,
-        trytes,
-        branchTransaction,
-        trunkTransaction,
-        minWeightMagnitude
-      );
-};
-
-export const performSequentialPow = (
-  powFn,
-  digestFn,
-  trytes,
-  trunkTransaction,
-  branchTransaction,
-  minWeightMagnitude
-) => {
-  const transactionObjects = map(trytes, transactionTrytes =>
-    assign({}, asTransactionObject(transactionTrytes), {
-      attachmentTimestamp: Date.now(),
-      attachmentTimestampLowerBound: 0,
-      attachmentTimestampUpperBound: (Math.pow(3, 27) - 1) / 2
-    })
-  );
-
-  // Order transaction objects in descending to make sure it starts from remainder object.
-  const sortedTransactionObjects = orderBy(transactionObjects, 'currentIndex', [
-    'desc'
-  ]);
-
-  return reduce(
-    sortedTransactionObjects,
-    (promise, transaction, index) => {
-      return promise.then(result => {
-        const withParentTransactions = assign({}, transaction, {
-          trunkTransaction: index
-            ? head(result.transactionObjects).hash
-            : trunkTransaction,
-          branchTransaction: index ? trunkTransaction : branchTransaction
-        });
-
-        const transactionTryteString = asTransactionTrytes(
-          withParentTransactions
-        );
-
-        return powFn(transactionTryteString, minWeightMagnitude)
-          .then(nonce => {
-            const trytesWithNonce = transactionTryteString
-              .substr(0, 2673 - nonce.length)
-              .concat(nonce);
-
-            result.trytes.unshift(trytesWithNonce);
-
-            return digestFn(trytesWithNonce).then(digest =>
-              asTransactionObject(trytesWithNonce, digest)
-            );
-          })
-          .then(transactionObject => {
-            result.transactionObjects.unshift(transactionObject);
-
-            return result;
-          });
-      });
-    },
-    Promise.resolve({ trytes: [], transactionObjects: [] })
-  );
-};
-
-const getDigest = trytes => {
-  return Promise.resolve(asTransactionObject(trytes).hash);
+  return powFn(trytes, trunkTransaction, branchTransaction, minWeightMagnitude);
 };
 
 export const localAttachToTangle = async (
@@ -161,29 +82,37 @@ export const localAttachToTangle = async (
   trytes
 ) => {
   try {
-    const result = await performPow(
-      trytes,
-      trunkTransaction,
-      branchTransaction,
-      minWeightMagnitude
-    );
+    console.log('Local POW on');
+    const result = await performPow(trytes, trunkTransaction, branchTransaction, minWeightMagnitude);
 
     if (get(result, 'trytes') && get(result, 'transactionObjects')) {
       return result.trytes;
     }
     return result;
   } catch (err) {
-    console.log(err);
+    console.log('Local POW error', err);
     return null;
   }
 };
 
-export const settings = {
+export const defaultSettings = {
   // provider: 'https://nodes.devnet.iota.org:443',
-  provider: 'https://nodes.thetangle.org:443',
+  provider: 'https://nodes.thetangle.org:443'
   // attachToTangle: localAttachToTangle
 };
 
-const iota = composeAPI(settings);
+export const getIotaSettings = ({ isLocalPOW, nodeDomain }) => {
+  if (isLocalPOW) {
+    return {
+      provider: nodeDomain,
+      attachToTangle: localAttachToTangle
+    };
+  }
+  return {
+    provider: nodeDomain
+  };
+};
 
-export default iota;
+export const getIOTA = settings => {
+  return composeAPI(settings);
+};

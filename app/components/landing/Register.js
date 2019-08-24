@@ -14,12 +14,11 @@ import LoadingOverlay from 'react-loading-overlay';
 import styles from './landingStyle';
 import { notify } from '../../store/actions/ui';
 import routes from '../../constants/routes';
-import {
-  setLandingComplete,
-  setLandingSeed
-} from '../../store/actions/account';
+import { setLandingComplete, setLandingSeed } from '../../store/actions/account';
 import { hash, initKeychain, initVault, addAccount } from '../../libs/crypto';
 import PasswordInput from '../input/PasswordInput';
+import { getSettings } from '../../store/selectors/settings';
+import { getIotaSettings } from '../../libs/iota';
 
 const Register = props => {
   const dispatch = useDispatch();
@@ -27,13 +26,10 @@ const Register = props => {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [username, setUsername] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const isGenerated = useSelector(
-    state => state.account.accountInfoDuringSetup.landingSeedGenerated
-  );
-  const generatedSeed = useSelector(
-    state => state.account.accountInfoDuringSetup.landingSeed
-  );
+  const isGenerated = useSelector(state => state.account.accountInfoDuringSetup.landingSeedGenerated);
+  const generatedSeed = useSelector(state => state.account.accountInfoDuringSetup.landingSeed);
   const { classes } = props;
+  const iotaSettings = getIotaSettings(useSelector(getSettings));
 
   const onBack = () => {
     dispatch(setLandingSeed(null));
@@ -67,9 +63,7 @@ const Register = props => {
     const pwEvaluation = zxcvbn(password);
     if (pwEvaluation.score < 4) {
       let errorMessage = 'Please choose a stronger password';
-      errorMessage += pwEvaluation.feedback.warning
-        ? `\nWarning: ${pwEvaluation.feedback.warning}`
-        : '';
+      errorMessage += pwEvaluation.feedback.warning ? `\nWarning: ${pwEvaluation.feedback.warning}` : '';
       errorMessage += pwEvaluation.feedback.suggestions.length
         ? `\nSuggestions: ${pwEvaluation.feedback.suggestions.join(' ')}`
         : '';
@@ -88,7 +82,7 @@ const Register = props => {
     try {
       const passwordHash = await hash(password);
       await initVault(passwordHash);
-      await addAccount(username, generatedSeed, passwordHash);
+      await addAccount(iotaSettings, username, generatedSeed, passwordHash);
     } catch (err) {
       dispatch(notify('error', 'Register error'));
       setIsLoading(false);
@@ -122,12 +116,7 @@ const Register = props => {
             onChange={e => setUsername(e.target.value)}
             autoFocus
           />
-          <PasswordInput
-            label="Password"
-            name="password"
-            value={password}
-            onChange={setPassword}
-          />
+          <PasswordInput label="Password" name="password" value={password} onChange={setPassword} />
           <p />
           <PasswordInput
             label="Confirm password"
@@ -143,12 +132,7 @@ const Register = props => {
               </Button>
             </Grid>
             <Grid item xs>
-              <Button
-                fullWidth
-                variant="contained"
-                color="primary"
-                onClick={onContinue}
-              >
+              <Button fullWidth variant="contained" color="primary" onClick={onContinue}>
                 Continue
               </Button>
             </Grid>

@@ -3,31 +3,20 @@ import { asciiToTrytes, trytesToAscii } from '@iota/converter';
 import groupBy from 'lodash/groupBy';
 import sortBy from 'lodash/sortBy';
 import trimEnd from 'lodash/trimEnd';
-import { sendTransfer, settings } from './iota';
+import { sendTransfer, defaultSettings } from './iota';
 import { Account, Contact, Conversation } from '../storage';
-import {
-  createConversation,
-  joinConversation,
-  saveConversation
-} from './conversation';
+import { createConversation, saveConversation } from './conversation';
 import { decryptRSA, encryptRSA, getKey, getSeed } from './crypto';
-import { getMamRoot } from './mam';
+import { getMamRoot, updateMamChannel } from './mam';
 
-export const fetchContactInfo = async mamRoot => {
-  const mamState = MAM.init(settings);
+export const fetchContactInfo = async (iotaSettings, mamRoot) => {
+  const mamState = MAM.init(iotaSettings);
   try {
     const result = await MAM.fetch(mamRoot, 'private');
     if (result && result.messages && result.messages.length) {
-      const contact = JSON.parse(
-        trytesToAscii(result.messages[result.messages.length - 1])
-      );
+      const contact = JSON.parse(trytesToAscii(result.messages[result.messages.length - 1]));
       console.log(contact);
-      if (
-        !contact ||
-        !contact.username ||
-        !contact.publicKey ||
-        !contact.address
-      ) {
+      if (!contact || !contact.username || !contact.publicKey || !contact.address) {
         throw new Error('Invalid contact');
       }
       return contact;
@@ -38,37 +27,26 @@ export const fetchContactInfo = async mamRoot => {
   }
 };
 
-export const sendContactRequest = async (passwordHash, mamRoot) => {
-  const contactInfo = await fetchContactInfo(mamRoot);
-  if (
-    contactInfo &&
-    contactInfo.username &&
-    contactInfo.publicKey &&
-    contactInfo.address
-  ) {
+export const sendContactRequest = async (iotaSettings, passwordHash, mamRoot) => {
+  const contactInfo = await fetchContactInfo(iotaSettings, mamRoot);
+  if (contactInfo && contactInfo.username && contactInfo.publicKey && contactInfo.address) {
     try {
       Contact.add({
         username: contactInfo.username,
         publicKey: contactInfo.publicKey,
         mamRoot
       });
-      const conversation = createConversation();
+      const conversation = createConversation(iotaSettings);
 
       const requestMessage = {};
       Object.keys(conversation).forEach(key => {
-        requestMessage[key] = encryptRSA(
-          conversation[key],
-          contactInfo.publicKey
-        );
+        requestMessage[key] = encryptRSA(conversation[key], contactInfo.publicKey);
       });
 
       const seed = await getSeed(passwordHash, 'string');
       const sideKey = await getKey(passwordHash, 'side');
 
-      requestMessage.senderRoot = encryptRSA(
-        getMamRoot(seed),
-        contactInfo.publicKey
-      );
+      requestMessage.senderRoot = encryptRSA(getMamRoot(seed), contactInfo.publicKey);
 
       console.log('Encrypted request message:', requestMessage);
 
@@ -80,9 +58,10 @@ export const sendContactRequest = async (passwordHash, mamRoot) => {
         }
       ];
 
-      await joinConversation(conversation.seed, Account.data.mamRoot);
-      sendTransfer(seed, transfer);
-      await saveConversation(conversation, [{ mamRoot }], seed, sideKey);
+      await updateMamChannel(iotaSettings, Account.data.mamRoot, conversation.seed, 'private');
+      await sendTransfer(iotaSettings, seed, transfer);
+      const newConversation = saveConversation(conversation, [{ mamRoot }]);
+      await updateMamChannel(iotaSettings, newConversation, seed, 'restricted', sideKey);
     } catch (e) {
       console.log(e);
       throw new Error(e);
@@ -93,12 +72,7 @@ export const sendContactRequest = async (passwordHash, mamRoot) => {
 };
 
 export const decryptContactRequest = async (messageData, privateKey) => {
-  if (
-    messageData.senderRoot &&
-    messageData.sideKey &&
-    messageData.mamRoot &&
-    messageData.seed
-  ) {
+  if (messageData.senderRoot && messageData.sideKey && messageData.mamRoot && messageData.seed) {
     const decryptedData = {};
     Object.keys(messageData).forEach(key => {
       decryptedData[key] = decryptRSA(messageData[key], privateKey);
@@ -133,10 +107,7 @@ export const getContactRequest = async passwordHash => {
 
     try {
       const messageData = JSON.parse(trytesToAscii(trimmedMessage));
-      const decryptedData = await decryptContactRequest(
-        messageData,
-        privateKey
-      );
+      const decryptedData = await decryptContactRequest(messageData, privateKey);
 
       if (decryptedData) conversations.push(decryptedData);
     } catch (e) {

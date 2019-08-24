@@ -3,11 +3,13 @@ import { useSelector } from 'react-redux';
 import Messenger from './Messenger';
 import { getSeed } from '../../libs/crypto';
 import { getPasswordHash } from '../../store/selectors/main';
-import { getTransactionsFromAccount } from '../../libs/iota';
+import { getIotaSettings, getTransactionsFromAccount } from '../../libs/iota';
 import { fetchNewMessagesFromAllConversation } from '../../libs/conversation';
+import { getSettings } from '../../store/selectors/settings';
 
 const Main = () => {
   const passwordHash = useSelector(getPasswordHash);
+  const iotaSettings = getIotaSettings(useSelector(getSettings));
 
   useEffect(() => {
     let seed;
@@ -18,9 +20,9 @@ const Main = () => {
       .catch(error => console.log('Error getting seed', error));
 
     const interval = setInterval(async () => {
-      await fetchNewMessagesFromAllConversation();
+      await fetchNewMessagesFromAllConversation(iotaSettings);
       // if (seed) {
-      //   await getTransactionsFromAccount(seed);
+      //   await getTransactionsFromAccount(iotaSettings,seed);
       // }
     }, 5000);
     return () => clearInterval(interval);

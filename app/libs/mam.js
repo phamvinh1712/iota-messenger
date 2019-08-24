@@ -1,24 +1,18 @@
 import MAM from '@iota/mam';
 import { asciiToTrytes } from '@iota/converter';
-import { settings } from './iota';
+import { defaultSettings } from './iota';
 import { DEFAULT_DEPTH, DEFAULT_MIN_WEIGHT_MAGNITUDE } from '../constants/iota';
 
 export const getMamRoot = seed => {
-  const mamState = MAM.init(settings, seed);
+  const mamState = MAM.init(defaultSettings, seed);
   return MAM.getRoot(mamState);
 };
 
-export const updateMamChannel = async (
-  data,
-  seed,
-  mode,
-  sideKey,
-  index = 0
-) => {
+export const updateMamChannel = async (iotaSettings, data, seed, mode, sideKey, index = 0) => {
   if (mode === 'restricted' && !sideKey) {
     throw new Error('Restricted mode requires side key');
   }
-  let mamState = MAM.init(settings, seed);
+  let mamState = MAM.init(iotaSettings, seed);
   if (mode === 'restricted' && sideKey) {
     mamState = MAM.changeMode(mamState, mode, sideKey);
   } else {
@@ -40,13 +34,8 @@ export const updateMamChannel = async (
   }
   const trytes = asciiToTrytes(JSON.stringify(data));
   const message = MAM.create(mamState, trytes);
-  try{
-    await MAM.attach(
-      message.payload,
-      message.address,
-      DEFAULT_DEPTH,
-      DEFAULT_MIN_WEIGHT_MAGNITUDE
-    );
+  try {
+    await MAM.attach(message.payload, message.address, DEFAULT_DEPTH, DEFAULT_MIN_WEIGHT_MAGNITUDE);
   } catch (e) {
     console.log(e);
   }

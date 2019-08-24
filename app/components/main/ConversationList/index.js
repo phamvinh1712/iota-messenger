@@ -14,13 +14,11 @@ import Toolbar from '../Toolbar';
 import ToolbarButton from '../ToolbarButton';
 import style from './ConversationList.css';
 import ConversationListItem from '../ConversationListItem';
-import {
-  finishLoadingConversationList,
-  notify,
-  startLoadingConversationList
-} from '../../../store/actions/ui';
+import { finishLoadingConversationList, notify, startLoadingConversationList } from '../../../store/actions/ui';
 import { Contact, Conversation } from '../../../storage';
 import { fetchContactInfo, sendContactRequest } from '../../../libs/contact';
+import { getSettings } from '../../../store/selectors/settings';
+import { getIotaSettings } from '../../../libs/iota';
 
 const ConversationList = () => {
   const dispatch = useDispatch();
@@ -31,6 +29,7 @@ const ConversationList = () => {
   const [newContact, setNewContact] = useState(null);
   const [conversations, setConversations] = useState([]);
   const passwordHash = useSelector(state => state.main.password);
+  const iotaSettings = getIotaSettings(useSelector(getSettings));
 
   const closeAddDialog = () => {
     setOpenDialog(false);
@@ -40,7 +39,7 @@ const ConversationList = () => {
 
   const checkAddress = async address => {
     setIsCheckingAddress(true);
-    const fetchedData = await fetchContactInfo(address);
+    const fetchedData = await fetchContactInfo(iotaSettings, address);
     if (!fetchedData) {
       dispatch(notify('error', 'Cannot find information for this address'));
     } else {
@@ -71,7 +70,7 @@ const ConversationList = () => {
     if (newContact && newContact.mamRoot) {
       closeAddDialog();
       dispatch(startLoadingConversationList());
-      sendContactRequest(passwordHash, newContact.mamRoot)
+      sendContactRequest(iotaSettings, passwordHash, newContact.mamRoot)
         .then(bool => {
           dispatch(finishLoadingConversationList());
           if (bool) {
@@ -113,35 +112,20 @@ const ConversationList = () => {
           title="Messenger"
           leftItems={[<ToolbarButton key="cog" icon="ion-ios-cog" />]}
           rightItems={[
-            <ToolbarButton
-              key="add"
-              icon="ion-ios-add-circle-outline"
-              onClick={() => setOpenDialog(true)}
-            />
+            <ToolbarButton key="add" icon="ion-ios-add-circle-outline" onClick={() => setOpenDialog(true)} />
           ]}
         />
         <ConversationSearch />
         {conversations.map(conversation => (
-          <ConversationListItem
-            key={conversation.mamRoot}
-            data={conversation}
-          />
+          <ConversationListItem key={conversation.mamRoot} data={conversation} />
         ))}
       </div>
-      <Dialog
-        fullWidth
-        maxWidth="sm"
-        open={openDialog}
-        onClose={closeAddDialog}
-        aria-labelledby="form-dialog-title"
-      >
+      <Dialog fullWidth maxWidth="sm" open={openDialog} onClose={closeAddDialog} aria-labelledby="form-dialog-title">
         <DialogTitle id="form-dialog-title">New contact</DialogTitle>
         <DialogContent>
           <DialogContentText>
             Add contact
-            {isCheckingSuccess && newContact && newContact.username
-              ? `: ${newContact.username}`
-              : ''}
+            {isCheckingSuccess && newContact && newContact.username ? `: ${newContact.username}` : ''}
           </DialogContentText>
           <TextField
             autoFocus
@@ -169,12 +153,7 @@ const ConversationList = () => {
             {isCheckingAddress && <CircularProgress size={24} />}
           </Button>
 
-          <Button
-            disabled={!isCheckingSuccess}
-            color="primary"
-            variant="contained"
-            onClick={addContact}
-          >
+          <Button disabled={!isCheckingSuccess} color="primary" variant="contained" onClick={addContact}>
             Add
           </Button>
         </DialogActions>

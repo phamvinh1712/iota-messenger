@@ -7,10 +7,7 @@ import ToolbarButton from '../ToolbarButton';
 import Message from '../Message';
 
 import style from './MessageList.css';
-import {
-  getCurrentConversation,
-  getSelfMamRoot
-} from '../../../store/selectors/main';
+import { getCurrentConversation, getSelfMamRoot } from '../../../store/selectors/main';
 import { Conversation } from '../../../storage';
 
 const MessageList = props => {
@@ -46,9 +43,7 @@ const MessageList = props => {
 
       if (previous) {
         const previousMoment = moment(previous.createdTime);
-        const previousDuration = moment.duration(
-          currentMoment.diff(previousMoment)
-        );
+        const previousDuration = moment.duration(currentMoment.diff(previousMoment));
         prevBySameAuthor = previous.sender.mamRoot === current.sender.mamRoot;
 
         if (prevBySameAuthor && previousDuration.as('hours') < 1) {
@@ -92,18 +87,12 @@ const MessageList = props => {
     <div>
       <Toolbar
         title="Conversation Title"
-        rightItems={[
-          <ToolbarButton key="info" icon="ion-ios-information-circle-outline" />
-        ]}
+        rightItems={[<ToolbarButton key="info" icon="ion-ios-information-circle-outline" />]}
       />
 
       <div className={style.messageListContainer}>{renderMessages()}</div>
 
-      {currentConversation ? (
-        <Compose conversation={currentConversation} />
-      ) : (
-        ''
-      )}
+      {currentConversation ? <Compose conversation={currentConversation} /> : ''}
     </div>
   );
 };

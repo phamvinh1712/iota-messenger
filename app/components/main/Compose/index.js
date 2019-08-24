@@ -5,11 +5,10 @@ import { createMessage } from '../../../libs/message';
 import { getKey } from '../../../libs/crypto';
 import { getPasswordHash } from '../../../store/selectors/main';
 import { updateMamChannel } from '../../../libs/mam';
-import {
-  finishLoadingMessageList,
-  startLoadingMessageList
-} from '../../../store/actions/ui';
+import { finishLoadingMessageList, startLoadingMessageList } from '../../../store/actions/ui';
 import { Conversation } from '../../../storage';
+import { getSettings } from '../../../store/selectors/settings';
+import { getIotaSettings } from '../../../libs/iota';
 
 const Compose = props => {
   const [message, setMessage] = useState('');
@@ -17,6 +16,7 @@ const Compose = props => {
   const passwordHash = useSelector(getPasswordHash);
   const [conversationData, setConversationData] = useState(null);
   const dispatch = useDispatch();
+  const iotaSettings = getIotaSettings(useSelector(getSettings));
 
   const keyPressed = e => {
     if (e.key === 'Enter') {
@@ -53,13 +53,7 @@ const Compose = props => {
       const privateKey = await getKey(passwordHash, 'private');
       const messageObj = createMessage(message, privateKey);
       const { seed, sideKey, messagesLength } = conversationData;
-      await updateMamChannel(
-        messageObj,
-        seed,
-        'restricted',
-        sideKey,
-        messagesLength
-      );
+      await updateMamChannel(iotaSettings, messageObj, seed, 'restricted', sideKey, messagesLength);
       return true;
     } catch (e) {
       return false;

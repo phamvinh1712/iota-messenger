@@ -1,9 +1,9 @@
-import { MAX_SEED_LENGTH, ALIAS_REALM } from '../constants/iota';
-import iota, { generateAddress } from './iota';
-import { Account } from '../storage';
-import { byteToTrit, byteToChar } from './converter';
-import { getMamRoot, updateMamChannel } from './mam';
 import { trytesToAscii, asciiToTrytes } from '@iota/converter';
+import { MAX_SEED_LENGTH, ALIAS_REALM } from '../constants/iota';
+import { generateAddress } from './iota';
+import { Account } from '../storage';
+import { byteToChar } from './converter';
+import { updateMamChannel } from './mam';
 
 const NodeRSA = require('node-rsa');
 
@@ -35,10 +35,7 @@ export const randomiseSeedCharacter = async (seed, charId, randomBytesFn) => {
   while (!complete) {
     const byte = await randomBytesFn(1);
     if (byte[0] < 243) {
-      updatedSeed =
-        seed.substr(0, charId) +
-        charset.charAt(byte[0] % 27) +
-        seed.substr(charId + 1, 80);
+      updatedSeed = seed.substr(0, charId) + charset.charAt(byte[0] % 27) + seed.substr(charId + 1, 80);
       complete = true;
     }
   }
@@ -71,9 +68,7 @@ export const encrypt = async (contentPlain, hash) => {
 
   const algorithm = { name: 'AES-GCM', iv: iv };
 
-  const key = await crypto.subtle.importKey('raw', hash, algorithm, false, [
-    'encrypt'
-  ]);
+  const key = await crypto.subtle.importKey('raw', hash, algorithm, false, ['encrypt']);
 
   const cipherBuffer = await crypto.subtle.encrypt(algorithm, key, content);
   const cipherArray = new Uint8Array(cipherBuffer);
@@ -92,11 +87,9 @@ export const decrypt = async (cipherText, hash) => {
     const ivArray = cipherParts[0].split(',');
     const iv = Uint8Array.from(ivArray);
 
-    const algorithm = { name: 'AES-GCM', iv: iv };
+    const algorithm = { name: 'AES-GCM', iv };
 
-    const key = await crypto.subtle.importKey('raw', hash, algorithm, false, [
-      'decrypt'
-    ]);
+    const key = await crypto.subtle.importKey('raw', hash, algorithm, false, ['decrypt']);
 
     const cipherArray = cipherParts[1].split(',');
     const cipher = Uint8Array.from(cipherArray);
@@ -114,8 +107,7 @@ export const decrypt = async (cipherText, hash) => {
 export const initVault = async passwordHash => {
   try {
     const vault = await Electron.readKeychain(MAIN_ACCOUNT);
-    const decryptedVault =
-      vault === null ? {} : await decrypt(vault, passwordHash);
+    const decryptedVault = vault === null ? {} : await decrypt(vault, passwordHash);
 
     const updatedVault = await encrypt(decryptedVault, passwordHash);
 
@@ -218,23 +210,23 @@ export const getRealmEncryptionKey = () => {
   });
 };
 
-export const addAccount = async (username, seed, passwordHash) => {
+export const addAccount = async (iotaSettings, username, seed, passwordHash) => {
   const seedVault = await encrypt(seed, passwordHash);
   await Electron.setKeychain(`${MAIN_ACCOUNT}-seed`, seedVault);
 
   const stringSeed = seed.map(byteToChar).join('');
-  const address = await generateAddress(stringSeed);
+  const address = await generateAddress(iotaSettings, stringSeed);
 
   const { publicKey, privateKey } = generateKeyPair();
-
-  const privateKeyVault = await encrypt(privateKey, passwordHash);
-  await Electron.setKeychain(`${MAIN_ACCOUNT}-private-key`, privateKeyVault);
-
   const sideKey = randomBytes(MAX_SEED_LENGTH, 27)
     .map(byteToChar)
     .join('');
-  const sideKeyVault = await encrypt(sideKey, passwordHash);
-  await Electron.setKeychain(`${MAIN_ACCOUNT}-side-key`, sideKeyVault);
+  try {
+    await Electron.setKeychain(`${MAIN_ACCOUNT}-private-key`, privateKey);
+    await Electron.setKeychain(`${MAIN_ACCOUNT}-side-key`, sideKey);
+  } catch (e) {
+    console.log(e);
+  }
 
   let accountData = {
     username,
@@ -242,7 +234,7 @@ export const addAccount = async (username, seed, passwordHash) => {
     address
   };
 
-  const mamRoot = await updateMamChannel(accountData, stringSeed, 'private');
+  const mamRoot = await updateMamChannel(iotaSettings, accountData, stringSeed, 'private');
 
   accountData = {
     ...accountData,
@@ -301,10 +293,7 @@ export const updatePassword = async (hash, hashNew) => {
   for (let i = 0; i < accounts.length; i++) {
     const account = vault[i];
 
-    if (
-      account.account === `${MAIN_ACCOUNT}-salt` ||
-      account.account === ALIAS_REALM
-    ) {
+    if (account.account === `${MAIN_ACCOUNT}-salt` || account.account === ALIAS_REALM) {
       continue;
     }
 
@@ -364,10 +353,9 @@ export const getSeed = async (passwordHash, format) => {
 };
 
 export const getKey = async (passwordHash, type) => {
-  const vault = await Electron.readKeychain(`${MAIN_ACCOUNT}-${type}-key`);
-  if (!vault) {
+  const key = await Electron.readKeychain(`${MAIN_ACCOUNT}-${type}-key`);
+  if (!key) {
     throw new Error(`No ${type} key`);
   }
-  const decryptedVault = await decrypt(vault, passwordHash);
-  return decryptedVault;
+  return key;
 };

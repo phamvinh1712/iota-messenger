@@ -4,15 +4,11 @@
  * @param {string} Capitalized string
  */
 const capitalize = input => {
-  return typeof input === 'string' && input.length > 0
-    ? input[0].toUpperCase() + input.substr(1).toLowerCase()
-    : '';
+  return typeof input === 'string' && input.length > 0 ? input[0].toUpperCase() + input.substr(1).toLowerCase() : '';
 };
 
 const shorten = (input, length) => {
-  return typeof input === 'string' && input.length > length
-    ? input.substr(0, length - 1) + '…'
-    : input;
+  return typeof input === 'string' && input.length > length ? input.substr(0, length - 1) + '…' : input;
 };
 
 const trytesTrits = [
