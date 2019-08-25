@@ -54,8 +54,12 @@ const Login = props => {
 
       const seed = await getSeed(passwordHash, 'string');
       await getTransactionsFromAccount(iotaSettings, seed);
-      await getContactRequest(passwordHash);
-      console.log('finished');
+      try{
+        await getContactRequest(passwordHash);
+      } catch (e) {
+        console.log(e);
+      }
+
       props.history.push(routes.MAIN);
     }
     return dispatch(finishLoadingApp());

@@ -1,10 +1,9 @@
 import MAM from '@iota/mam';
 import { asciiToTrytes } from '@iota/converter';
-import { defaultSettings } from './iota';
 import { DEFAULT_DEPTH, DEFAULT_MIN_WEIGHT_MAGNITUDE } from '../constants/iota';
 
-export const getMamRoot = seed => {
-  const mamState = MAM.init(defaultSettings, seed);
+export const getMamRoot = (iotaSettings, seed) => {
+  const mamState = MAM.init(iotaSettings, seed);
   return MAM.getRoot(mamState);
 };
 

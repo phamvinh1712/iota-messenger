@@ -3,7 +3,7 @@ import { MainActionTypes } from '../types';
 export const initialState = {
   password: '',
   currentConversationRoot: '',
-  selfMamRoot :''
+  selfMamRoot: ''
 };
 
 const main = (state = initialState, action) => {

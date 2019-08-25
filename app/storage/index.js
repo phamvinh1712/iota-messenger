@@ -87,8 +87,7 @@ class Conversation {
 
   static get keys() {
     const conversations = realm.objects('Conversation');
-    if (conversations.length)
-      return conversations.map(conversation => conversation.mamRoot);
+    if (conversations.length) return conversations.map(conversation => conversation.mamRoot);
     return [];
   }
 
@@ -112,6 +111,14 @@ class Conversation {
   static addParticipant(id, contactId) {
     const conversation = Conversation.getById(id);
     const contact = Contact.getById(contactId);
+    if (!conversation || !contact) return;
+    let isExist = false;
+    conversation.participants.forEach(participant => {
+      if (contact.mamRoot === participant.mamRoot) {
+        isExist = true;
+      }
+    });
+    if (isExist) return;
     realm.write(() => conversation.participants.push(contact));
   }
 
@@ -127,12 +134,8 @@ class Conversation {
     const conversations = Conversation.data;
     return map(conversations, conversation =>
       assign({}, conversation, {
-        participants: map(conversation.participants, participant =>
-          parse(serialise(participant))
-        ),
-        messages: map(conversation.messages, message =>
-          parse(serialise(message))
-        )
+        participants: map(conversation.participants, participant => parse(serialise(participant))),
+        messages: map(conversation.messages, message => parse(serialise(message)))
       })
     );
   }
@@ -174,21 +177,11 @@ const initialiseStorage = getEncryptionKeyPromise => {
   Realm = Electron.getRealm();
 
   return getEncryptionKeyPromise().then(encryptionKey => {
-    realm = new Realm(
-      assign({}, { schema: schemas, path: STORAGE_PATH }, { encryptionKey })
-    );
+    realm = new Realm(assign({}, { schema: schemas, path: STORAGE_PATH }, { encryptionKey }));
 
     Account.createIfNotExists();
   });
 };
-const resetStorage = getEncryptionKeyPromise =>
-  purge().then(() => initialiseStorage(getEncryptionKeyPromise));
+const resetStorage = getEncryptionKeyPromise => purge().then(() => initialiseStorage(getEncryptionKeyPromise));
 
-export {
-  Account,
-  Contact,
-  Conversation,
-  initialiseStorage,
-  realm,
-  resetStorage
-};
+export { Account, Contact, Conversation, initialiseStorage, realm, resetStorage };

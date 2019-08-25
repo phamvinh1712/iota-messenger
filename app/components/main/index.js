@@ -6,6 +6,7 @@ import { getPasswordHash } from '../../store/selectors/main';
 import { getIotaSettings, getTransactionsFromAccount } from '../../libs/iota';
 import { fetchNewMessagesFromAllConversation } from '../../libs/conversation';
 import { getSettings } from '../../store/selectors/settings';
+import { getContactRequest } from '../../libs/contact';
 
 const Main = () => {
   const passwordHash = useSelector(getPasswordHash);
@@ -21,9 +22,14 @@ const Main = () => {
 
     const interval = setInterval(async () => {
       await fetchNewMessagesFromAllConversation(iotaSettings);
-      // if (seed) {
-      //   await getTransactionsFromAccount(iotaSettings,seed);
-      // }
+      if (seed) {
+        try {
+          await getTransactionsFromAccount(iotaSettings, seed);
+          await getContactRequest(iotaSettings, passwordHash);
+        } catch (e) {
+          console.log(e);
+        }
+      }
     }, 5000);
     return () => clearInterval(interval);
   }, []);

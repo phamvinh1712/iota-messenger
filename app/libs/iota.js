@@ -22,12 +22,10 @@ export const getTransactionsFromAccount = (iotaSettings, seed) =>
         if (transactions && transactions.length) {
           Account.update({ transactions });
         }
-        console.log(Account.data);
         resolve(true);
       })
       .catch(err => {
         reject(err);
-        console.log(err);
       });
   });
 
@@ -93,12 +91,6 @@ export const localAttachToTangle = async (
     console.log('Local POW error', err);
     return null;
   }
-};
-
-export const defaultSettings = {
-  // provider: 'https://nodes.devnet.iota.org:443',
-  provider: 'https://nodes.thetangle.org:443'
-  // attachToTangle: localAttachToTangle
 };
 
 export const getIotaSettings = ({ isLocalPOW, nodeDomain }) => {

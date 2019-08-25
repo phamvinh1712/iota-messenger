@@ -323,7 +323,7 @@ export const encryptRSA = (message, publicKey) => {
 export const decryptRSA = (cipherMessage, privateKey) => {
   const rsa = new NodeRSA();
   rsa.importKey(trytesToAscii(privateKey), `pkcs8-private-pem`);
-  return rsa.decrypt(cipherMessage).toString('ascii');
+  return rsa.decrypt(Buffer.from(cipherMessage.data)).toString('ascii');
 };
 
 export const signRSA = (message, privateKey) => {

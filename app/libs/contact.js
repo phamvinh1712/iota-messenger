@@ -3,7 +3,7 @@ import { asciiToTrytes, trytesToAscii } from '@iota/converter';
 import groupBy from 'lodash/groupBy';
 import sortBy from 'lodash/sortBy';
 import trimEnd from 'lodash/trimEnd';
-import { sendTransfer, defaultSettings } from './iota';
+import { sendTransfer } from './iota';
 import { Account, Contact, Conversation } from '../storage';
 import { createConversation, saveConversation } from './conversation';
 import { decryptRSA, encryptRSA, getKey, getSeed } from './crypto';
@@ -46,7 +46,7 @@ export const sendContactRequest = async (iotaSettings, passwordHash, mamRoot) =>
       const seed = await getSeed(passwordHash, 'string');
       const sideKey = await getKey(passwordHash, 'side');
 
-      requestMessage.senderRoot = encryptRSA(getMamRoot(seed), contactInfo.publicKey);
+      requestMessage.senderRoot = encryptRSA(getMamRoot(iotaSettings, seed), contactInfo.publicKey);
 
       console.log('Encrypted request message:', requestMessage);
 
@@ -71,25 +71,29 @@ export const sendContactRequest = async (iotaSettings, passwordHash, mamRoot) =>
   return false;
 };
 
-export const decryptContactRequest = async (messageData, privateKey) => {
+export const decryptContactRequest = async (iotaSettings, messageData, privateKey) => {
   if (messageData.senderRoot && messageData.sideKey && messageData.mamRoot && messageData.seed) {
     const decryptedData = {};
+    console.log(messageData);
     Object.keys(messageData).forEach(key => {
       decryptedData[key] = decryptRSA(messageData[key], privateKey);
     });
     console.log('decryptedData', decryptedData);
     try {
-      const sender = await fetchContactInfo(decryptedData.mamRoot);
-      if (!sender) throw new Error('Sender is not real');
+      const sender = await fetchContactInfo(iotaSettings, decryptedData.senderRoot);
+      console.log(sender);
+      decryptedData.sender = sender;
+      if (!sender) return null;
     } catch (e) {
-      throw new Error(e);
+      console.log(e);
+      return null;
     }
     return decryptedData;
   }
   return null;
 };
 
-export const getContactRequest = async passwordHash => {
+export const getContactRequest = async (iotaSettings, passwordHash) => {
   const privateKey = await getKey(passwordHash, 'private');
   const conversations = [];
   const transactions = Account.data.transactions.filter(
@@ -107,14 +111,16 @@ export const getContactRequest = async passwordHash => {
 
     try {
       const messageData = JSON.parse(trytesToAscii(trimmedMessage));
-      const decryptedData = await decryptContactRequest(messageData, privateKey);
+      const decryptedData = await decryptContactRequest(iotaSettings, messageData, privateKey);
 
       if (decryptedData) conversations.push(decryptedData);
+      console.log(decryptedData);
     } catch (e) {
       console.log(e);
       continue;
     }
   }
+  console.log(conversations);
   conversations.forEach(conversation => {
     const checkContact = Contact.getById(conversation.senderRoot);
     if (!checkContact) {
@@ -131,6 +137,7 @@ export const getContactRequest = async passwordHash => {
         sideKey: conversation.sideKey,
         seed: conversation.seed
       });
+      Conversation.addParticipant(conversation.mamRoot, conversation.senderRoot);
     }
   });
   return conversations;

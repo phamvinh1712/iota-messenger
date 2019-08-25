@@ -1,6 +1,6 @@
-export const STORAGE_PATH = `${
-  typeof Electron === 'object' ? Electron.getUserDataPath() : ''
-}/iota-messenger${process.env.NODE_ENV === 'development' ? '-dev' : ''}.realm`;
+export const STORAGE_PATH = `${typeof Electron === 'object' ? Electron.getUserDataPath() : ''}/iota-messenger${
+  process.env.NODE_ENV === 'development' ? '-dev' : ''
+}.realm`;
 
 export const AccountSchema = {
   name: 'Account',
@@ -86,10 +86,4 @@ export const TransactionSchema = {
   }
 };
 
-export default [
-  AccountSchema,
-  ContactSchema,
-  MessageSchema,
-  ConversationSchema,
-  TransactionSchema
-];
+export default [AccountSchema, ContactSchema, MessageSchema, ConversationSchema, TransactionSchema];
