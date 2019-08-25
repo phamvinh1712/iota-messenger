@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { useSelector,useDispatch } from 'react-redux';
+import { useSelector, useDispatch } from 'react-redux';
 import Messenger from './Messenger';
 import { getSeed } from '../../libs/crypto';
 import { getPasswordHash } from '../../store/selectors/main';

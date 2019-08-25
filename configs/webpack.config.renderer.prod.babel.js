@@ -59,6 +59,7 @@ export default merge.smart(baseConfig, {
             loader: 'css-loader',
             options: {
               modules: true,
+              camelCase: true,
               localIdentName: '[name]__[local]__[hash:base64:5]',
               sourceMap: true
             }

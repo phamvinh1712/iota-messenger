@@ -61,6 +61,10 @@
       "app/app.html",
       "app/main.prod.js",
       "app/main.prod.js.map",
+      "app/preload.prod.js",
+      "app/preload.prod.js.map",
+      "app/Entangled.prod.js",
+      "app/Entangled.prod.js.map",
       "package.json"
     ],
     "dmg": {

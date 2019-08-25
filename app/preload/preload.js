@@ -1,8 +1,5 @@
-const { ipcRenderer: ipc } = require('electron');
-const Electron = require('./Electron');
-
-// Define environment mode as Development
-Electron.mode = 'dev';
+import { ipcRenderer as ipc } from 'electron';
+import Electron from './Electron';
 
 // Inject screenshot proxy call
 Electron.screenshot = filename => {
