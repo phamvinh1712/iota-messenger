@@ -1,6 +1,6 @@
 {
   "name": "iota-messenger",
-  "productName": "IotaMessenger",
+  "productName": "IOTA-Messenger",
   "version": "1.0.0",
   "description": "Messenger app based on IOTA",
   "scripts": {
@@ -54,8 +54,8 @@
   },
   "main": "./app/main.prod.js",
   "build": {
-    "productName": "ElectronReact",
-    "appId": "org.develar.ElectronReact",
+    "productName": "IOTA-Messenger",
+    "appId": "org.develar.IOTAMessenger",
     "files": [
       "app/dist/",
       "app/app.html",
@@ -241,10 +241,6 @@
     "yarn": "^1.15.2"
   },
   "dependencies": {
-    "@fortawesome/fontawesome-free": "^5.8.1",
-    "@fortawesome/fontawesome-svg-core": "^1.2.19",
-    "@fortawesome/free-solid-svg-icons": "^5.9.0",
-    "@fortawesome/react-fontawesome": "^0.1.4",
     "@iota/converter": "^1.0.0-beta.19",
     "@iota/core": "^1.0.0-beta.15",
     "@iota/mam": "^0.7.2",
@@ -266,7 +262,6 @@
     "kdbxweb": "^1.2.7",
     "keytar": "^4.9.0",
     "lodash": "^4.17.11",
-    "machine-uuid-sync": "^1.0.9",
     "moment": "^2.24.0",
     "node-rsa": "^1.0.5",
     "react": "^16.8.6",
@@ -282,7 +277,6 @@
     "redux-thunk": "^2.3.0",
     "reselect": "^4.0.0",
     "shave": "^2.5.4",
-    "socket.io-client": "^2.2.0",
     "source-map-support": "^0.5.11",
     "zxcvbn": "^4.4.2"
   },

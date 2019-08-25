@@ -19,11 +19,7 @@ export default function Landing(props) {
       <Route path={routes.INTRO} component={Intro} />
       <Route path={routes.SEEDGENERATE} component={SeedGenerate} />
       <Route path={routes.SEEDCONFIRM} component={SeedConfirm} />
-      <Route
-        path={routes.LANDING}
-        loop={false}
-        component={complete ? Login : Intro}
-      />
+      <Route path={routes.LANDING} loop={false} component={complete ? Login : Intro} />
     </Switch>
   );
 }

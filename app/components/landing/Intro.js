@@ -1,12 +1,12 @@
-import React, { useContext } from 'react';
+import React from 'react';
 import Container from '@material-ui/core/Container';
 import Paper from '@material-ui/core/Paper';
 import Typography from '@material-ui/core/Typography';
 import Grid from '@material-ui/core/Grid';
 import Button from '@material-ui/core/Button';
 
-import styles from './landingStyle';
 import withStyles from '@material-ui/core/styles/withStyles';
+import styles from './landingStyle';
 import routes from '../../constants/routes';
 
 const Intro = props => {
@@ -20,18 +20,14 @@ const Intro = props => {
             Do you need to create a new seed?
           </Typography>
           <Typography component="p">
-            Your IOTA seed is the master key to your application. It is 81
-            characters long, using only letters A-Z or the number 9
+            Your IOTA seed is the master key to your application. It is 81 characters long, using only letters A-Z or
+            the number 9
           </Typography>
         </Paper>
         <p />
         <Grid container spacing={2}>
           <Grid item xs>
-            <Button
-              fullWidth
-              variant="contained"
-              onClick={() => props.history.push(routes.SEEDCONFIRM)}
-            >
+            <Button fullWidth variant="contained" onClick={() => props.history.push(routes.SEEDCONFIRM)}>
               No
             </Button>
           </Grid>

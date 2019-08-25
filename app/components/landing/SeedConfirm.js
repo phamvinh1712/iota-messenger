@@ -15,12 +15,8 @@ import { setLandingSeed } from '../../store/actions/account';
 
 const SeedConfirm = props => {
   const dispatch = useDispatch();
-  const isGenerated = useSelector(
-    state => state.account.accountInfoDuringSetup.landingSeedGenerated
-  );
-  const generatedSeed = useSelector(
-    state => state.account.accountInfoDuringSetup.landingSeed
-  );
+  const isGenerated = useSelector(state => state.account.accountInfoDuringSetup.landingSeedGenerated);
+  const generatedSeed = useSelector(state => state.account.accountInfoDuringSetup.landingSeed);
 
   const [seed, setSeed] = useState([]);
   const { classes } = props;
@@ -31,10 +27,7 @@ const SeedConfirm = props => {
       return;
     }
     if (isGenerated) {
-      if (
-        seed.length !== generatedSeed.length ||
-        !generatedSeed.every((v, i) => v % 27 === seed[i] % 27)
-      ) {
+      if (seed.length !== generatedSeed.length || !generatedSeed.every((v, i) => v % 27 === seed[i] % 27)) {
         dispatch(notify('error', 'Seed does not match'));
         return;
       }
@@ -72,12 +65,7 @@ const SeedConfirm = props => {
             </Button>
           </Grid>
           <Grid item xs>
-            <Button
-              fullWidth
-              variant="contained"
-              color="primary"
-              onClick={onContinue}
-            >
+            <Button fullWidth variant="contained" color="primary" onClick={onContinue}>
               Continue
             </Button>
           </Grid>

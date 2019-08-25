@@ -12,23 +12,17 @@ import DialogContentText from '@material-ui/core/DialogContentText';
 import DialogTitle from '@material-ui/core/DialogTitle';
 import withStyles from '@material-ui/core/styles/withStyles';
 import { useDispatch } from 'react-redux';
+import PropTypes from 'prop-types';
+import zxcvbn from 'zxcvbn';
 
 import { setLandingSeed } from '../../store/actions/account';
 import { MAX_SEED_LENGTH } from '../../constants/iota';
-import {
-  addAccount,
-  hash,
-  initKeychain,
-  initVault,
-  randomBytes
-} from '../../libs/crypto';
+import { randomBytes } from '../../libs/crypto';
 import { byteToChar } from '../../libs/converter';
 import styles from './landingStyle';
 import routes from '../../constants/routes';
-import PropTypes from 'prop-types';
 import PasswordInput from '../input/PasswordInput';
 import { notify } from '../../store/actions/ui';
-import zxcvbn from 'zxcvbn';
 
 const SeedGenerate = props => {
   const dispatch = useDispatch();
@@ -81,9 +75,7 @@ const SeedGenerate = props => {
     const pwEvaluation = zxcvbn(password);
     if (pwEvaluation.score < 4) {
       let errorMessage = 'Please choose a stronger password';
-      errorMessage += pwEvaluation.feedback.warning
-        ? `\nWarning: ${pwEvaluation.feedback.warning}`
-        : '';
+      errorMessage += pwEvaluation.feedback.warning ? `\nWarning: ${pwEvaluation.feedback.warning}` : '';
       errorMessage += pwEvaluation.feedback.suggestions.length
         ? `\nSuggestions: ${pwEvaluation.feedback.suggestions.join(' ')}`
         : '';
@@ -110,11 +102,7 @@ const SeedGenerate = props => {
           {seed.map((byte, index) => {
             const c = byteToChar(byte);
             return (
-              <Button
-                value={index}
-                key={`${index}-${c}`}
-                onClick={randomPosition}
-              >
+              <Button value={index} key={`${index}-${c}`} onClick={randomPosition}>
                 {c}
               </Button>
             );
@@ -125,11 +113,7 @@ const SeedGenerate = props => {
             <Refresh />
           </Fab>
           <span> </span>
-          <Fab
-            color="primary"
-            aria-label="Save"
-            onClick={() => setOpenDialog(true)}
-          >
+          <Fab color="primary" aria-label="Save" onClick={() => setOpenDialog(true)}>
             <Save />
           </Fab>
         </div>
@@ -142,34 +126,19 @@ const SeedGenerate = props => {
             </Button>
           </Grid>
           <Grid item xs>
-            <Button
-              fullWidth
-              variant="contained"
-              color="primary"
-              onClick={onContinue}
-            >
+            <Button fullWidth variant="contained" color="primary" onClick={onContinue}>
               Continue
             </Button>
           </Grid>
         </Grid>
       </div>
-      <Dialog
-        open={openDialog}
-        onClose={() => setOpenDialog(false)}
-        aria-labelledby="form-dialog-title"
-      >
+      <Dialog open={openDialog} onClose={() => setOpenDialog(false)} aria-labelledby="form-dialog-title">
         <DialogTitle id="form-dialog-title">Seed save</DialogTitle>
         <DialogContent>
           <DialogContentText>
-            Your Seed can be saved to an encrypted file. Please set a password
-            for your file.
+            Your Seed can be saved to an encrypted file. Please set a password for your file.
           </DialogContentText>
-          <PasswordInput
-            label="Password"
-            name="password"
-            value={password}
-            onChange={setPassword}
-          />
+          <PasswordInput label="Password" name="password" value={password} onChange={setPassword} />
           <p />
           <PasswordInput
             label="Confirm password"
