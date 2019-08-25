@@ -46,7 +46,7 @@ export const fetchNewMessagesFromConversation = async (iotaSettings, conversatio
   const root = MAM.getRoot(mamState);
   try {
     const result = await MAM.fetch(root, 'restricted', conversation.sideKey);
-    console.log(result);
+
     if (result && result.messages) {
       result.messages.forEach(message => {
         const parsedMessage = JSON.parse(trytesToAscii(message));

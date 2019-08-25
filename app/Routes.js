@@ -11,14 +11,11 @@ import Notification from './components/notification/NotificationSnackbar';
 import { Account, initialiseStorage } from './storage';
 import { getRealmEncryptionKey } from './libs/crypto';
 import { setLandingComplete } from './store/actions/account';
-import { setSelfMamRoot } from './store/actions/main';
 
 export default props => {
   const dispatch = useDispatch();
   const isLoading = useSelector(state => state.ui.loading.app);
-  const isReady = useSelector(
-    state => state.account.landingComplete && state.main.password
-  );
+  const isReady = useSelector(state => state.account.landingComplete && state.main.password);
 
   const menuEvent = (event, path) => {
     console.log(path);
@@ -31,7 +28,6 @@ export default props => {
         const account = Account.data;
         if (account && account.landingComplete) {
           dispatch(setLandingComplete());
-          dispatch(setSelfMamRoot(account.mamRoot));
         }
       })
       .catch(error => {

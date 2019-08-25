@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { useSelector } from 'react-redux';
+import { useSelector,useDispatch } from 'react-redux';
 import Messenger from './Messenger';
 import { getSeed } from '../../libs/crypto';
 import { getPasswordHash } from '../../store/selectors/main';
@@ -8,13 +8,17 @@ import { fetchNewMessagesFromAllConversation } from '../../libs/conversation';
 import { getSettings } from '../../store/selectors/settings';
 import { getContactRequest } from '../../libs/contact';
 import { Account } from '../../storage';
+import { setSelfMamRoot } from '../../store/actions/main';
 
 const Main = () => {
   const passwordHash = useSelector(getPasswordHash);
   const iotaSettings = getIotaSettings(useSelector(getSettings));
+  const dispatch = useDispatch();
 
   useEffect(() => {
-    console.log(Account.data);
+    const account = Account.data;
+    dispatch(setSelfMamRoot(account.mamRoot));
+    console.log(account);
     let seed;
     getSeed(passwordHash, 'string')
       .then(result => {

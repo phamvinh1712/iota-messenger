@@ -48,8 +48,6 @@ export const sendContactRequest = async (iotaSettings, passwordHash, mamRoot) =>
 
       requestMessage.senderRoot = encryptRSA(getMamRoot(iotaSettings, seed), contactInfo.publicKey);
 
-      console.log('Encrypted request message:', requestMessage);
-
       const transfer = [
         {
           address: contactInfo.address,
@@ -74,14 +72,14 @@ export const sendContactRequest = async (iotaSettings, passwordHash, mamRoot) =>
 export const decryptContactRequest = async (iotaSettings, messageData, privateKey) => {
   if (messageData.senderRoot && messageData.sideKey && messageData.mamRoot && messageData.seed) {
     const decryptedData = {};
-    console.log(messageData);
+
     Object.keys(messageData).forEach(key => {
       decryptedData[key] = decryptRSA(messageData[key], privateKey);
     });
-    console.log('decryptedData', decryptedData);
+
     try {
       const sender = await fetchContactInfo(iotaSettings, decryptedData.senderRoot);
-      console.log(sender);
+      console.log(decryptedData);
       decryptedData.sender = sender;
       if (!sender) return null;
     } catch (e) {
@@ -114,7 +112,6 @@ export const getContactRequest = async (iotaSettings, passwordHash) => {
       const decryptedData = await decryptContactRequest(iotaSettings, messageData, privateKey);
 
       if (decryptedData) conversations.push(decryptedData);
-      console.log(decryptedData);
     } catch (e) {
       console.log(e);
       continue;
