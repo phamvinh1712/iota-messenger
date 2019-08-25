@@ -15,7 +15,7 @@ import routes from '../../constants/routes';
 import { setAppPassword } from '../../store/actions/main';
 import { Account } from '../../storage';
 import { setAccountInfo } from '../../store/actions/account';
-import { getContactRequest } from '../../libs/contact';
+import { getContactRequest, updateContactData } from '../../libs/contact';
 import { getTransactionsFromAccount, getIotaSettings } from '../../libs/iota';
 import { getSettings } from '../../store/selectors/settings';
 
@@ -53,9 +53,11 @@ const Login = props => {
       dispatch(setAccountInfo({ mamRoot, address, username }));
 
       const seed = await getSeed(passwordHash, 'string');
-      await getTransactionsFromAccount(iotaSettings, seed);
-      try{
+
+      try {
+        await getTransactionsFromAccount(iotaSettings, seed);
         await getContactRequest(passwordHash);
+        updateContactData(iotaSettings);
       } catch (e) {
         console.log(e);
       }

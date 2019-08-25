@@ -77,6 +77,14 @@ class Contact {
       realm.write(() => realm.delete(contact));
     }
   }
+
+  static updateById(id, data) {
+    const contact = Contact.getById(id);
+    if (!contact) return;
+    realm.write(() => {
+      assign(contact, { ...data });
+    });
+  }
 }
 
 class Conversation {

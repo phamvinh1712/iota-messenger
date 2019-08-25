@@ -15,7 +15,7 @@ export const fetchContactInfo = async (iotaSettings, mamRoot) => {
     const result = await MAM.fetch(mamRoot, 'private');
     if (result && result.messages && result.messages.length) {
       const contact = JSON.parse(trytesToAscii(result.messages[result.messages.length - 1]));
-      console.log(contact);
+
       if (!contact || !contact.username || !contact.publicKey || !contact.address) {
         throw new Error('Invalid contact');
       }
@@ -79,7 +79,6 @@ export const decryptContactRequest = async (iotaSettings, messageData, privateKe
 
     try {
       const sender = await fetchContactInfo(iotaSettings, decryptedData.senderRoot);
-      console.log(decryptedData);
       decryptedData.sender = sender;
       if (!sender) return null;
     } catch (e) {
@@ -138,4 +137,20 @@ export const getContactRequest = async (iotaSettings, passwordHash) => {
     }
   });
   return conversations;
+};
+
+export const updateContactData = iotaSettings => {
+  const contacts = Contact.data;
+  if (contacts) {
+    contacts.forEach(contact => {
+      const { mamRoot } = contact;
+      fetchContactInfo(iotaSettings, mamRoot)
+        .then(contactData => {
+          if (contactData && contactData.username) {
+            Contact.updateById(mamRoot, { username: contactData.username });
+          }
+        })
+        .catch(error => console.log('Fetch account info error', error));
+    });
+  }
 };

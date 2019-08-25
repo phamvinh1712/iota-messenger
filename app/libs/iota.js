@@ -18,7 +18,6 @@ export const getTransactionsFromAccount = (iotaSettings, seed) =>
         return iota.findTransactionObjects({ addresses });
       })
       .then(transactions => {
-        console.log(transactions);
         if (transactions && transactions.length) {
           Account.update({ transactions });
         }

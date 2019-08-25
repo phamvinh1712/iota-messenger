@@ -15,24 +15,30 @@ import ToolbarButton from '../ToolbarButton';
 import style from './ConversationList.css';
 import ConversationListItem from '../ConversationListItem';
 import { finishLoadingConversationList, notify, startLoadingConversationList } from '../../../store/actions/ui';
-import { Contact, Conversation } from '../../../storage';
+import { Account, Contact, Conversation } from '../../../storage';
 import { fetchContactInfo, sendContactRequest } from '../../../libs/contact';
 import { getSettings } from '../../../store/selectors/settings';
 import { getIotaSettings } from '../../../libs/iota';
+import { updateMamChannel } from '../../../libs/mam';
+import { getSeed } from '../../../libs/crypto';
 
 const ConversationList = () => {
   const dispatch = useDispatch();
-  const [openDialog, setOpenDialog] = useState(false);
+  const [openAddDialog, setOpenAddDialog] = useState(false);
   const [isCheckingSuccess, setIsCheckingSuccess] = useState(false);
   const [address, setAddress] = useState('');
   const [isCheckingAddress, setIsCheckingAddress] = useState(false);
   const [newContact, setNewContact] = useState(null);
   const [conversations, setConversations] = useState([]);
+  const [openAccountDialog, setOpenAccountDialog] = useState(false);
   const passwordHash = useSelector(state => state.main.password);
   const iotaSettings = getIotaSettings(useSelector(getSettings));
+  const accountData = Account.data;
+  const [username, setUsername] = useState(accountData.username);
+  const [isSavingUsername, setIsSavingUsername] = useState(false);
 
   const closeAddDialog = () => {
-    setOpenDialog(false);
+    setOpenAddDialog(false);
     setIsCheckingSuccess(false);
     setNewContact(null);
   };
@@ -87,6 +93,25 @@ const ConversationList = () => {
     }
   };
 
+  const changeUsername = async () => {
+    const oldUsername = accountData.username;
+    try {
+      const seed = await getSeed(passwordHash, 'string');
+      const updatedAccountData = {
+        username,
+        publicKey: accountData.publicKey,
+        address: accountData.address
+      };
+      await updateMamChannel(iotaSettings, updatedAccountData, seed, 'private');
+      Account.update({ username });
+      dispatch(notify('success', 'Change username success'));
+    } catch (e) {
+      console.log(e);
+      Account.update({ username: oldUsername });
+      dispatch(notify('error', 'Change username failed'));
+    }
+  };
+
   useEffect(() => {
     const conversationList = Conversation.getDataAsArray();
 
@@ -111,9 +136,9 @@ const ConversationList = () => {
       <div className={style.conversationList}>
         <Toolbar
           title="Messenger"
-          leftItems={[<ToolbarButton key="cog" icon="ion-ios-cog" />]}
+          leftItems={[<ToolbarButton key="cog" icon="ion-ios-cog" onClick={() => setOpenAccountDialog(true)} />]}
           rightItems={[
-            <ToolbarButton key="add" icon="ion-ios-add-circle-outline" onClick={() => setOpenDialog(true)} />
+            <ToolbarButton key="add" icon="ion-ios-add-circle-outline" onClick={() => setOpenAddDialog(true)} />
           ]}
         />
         <ConversationSearch />
@@ -121,7 +146,7 @@ const ConversationList = () => {
           <ConversationListItem key={conversation.mamRoot} data={conversation} />
         ))}
       </div>
-      <Dialog fullWidth maxWidth="sm" open={openDialog} onClose={closeAddDialog} aria-labelledby="form-dialog-title">
+      <Dialog fullWidth maxWidth="sm" open={openAddDialog} onClose={closeAddDialog} aria-labelledby="form-dialog-title">
         <DialogTitle id="form-dialog-title">New contact</DialogTitle>
         <DialogContent>
           <DialogContentText>
@@ -156,6 +181,43 @@ const ConversationList = () => {
 
           <Button disabled={!isCheckingSuccess} color="primary" variant="contained" onClick={addContact}>
             Add
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      <Dialog
+        fullWidth
+        maxWidth="sm"
+        open={openAccountDialog}
+        onClose={() => setOpenAccountDialog(false)}
+        aria-labelledby="form-dialog-title"
+      >
+        <DialogTitle id="form-dialog-title">Account setting</DialogTitle>
+        <DialogContent>
+          <DialogContentText>Your address : {accountData.mamRoot}</DialogContentText>
+          <TextField
+            id="username"
+            label="Username"
+            type="text"
+            value={username}
+            onChange={e => setUsername(e.target.value)}
+            fullWidth
+          />
+        </DialogContent>
+
+        <DialogActions>
+          <Button onClick={() => setOpenAccountDialog(false)} variant="contained">
+            Cancel
+          </Button>
+          <Button
+            onClick={() => changeUsername()}
+            disabled={!username || username === accountData.username}
+            color="primary"
+            variant="contained"
+          >
+            Save
+            {isSavingUsername && <CheckIcon />}
+            {isSavingUsername && <CircularProgress size={24} />}
           </Button>
         </DialogActions>
       </Dialog>
