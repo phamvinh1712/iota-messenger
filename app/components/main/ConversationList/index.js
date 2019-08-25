@@ -89,7 +89,7 @@ const ConversationList = () => {
 
   useEffect(() => {
     const conversationList = Conversation.getDataAsArray();
-    console.log(conversationList);
+
     setConversations(
       conversationList.map(conversation => {
         let lastMessage = '';

@@ -7,12 +7,14 @@ import { getIotaSettings, getTransactionsFromAccount } from '../../libs/iota';
 import { fetchNewMessagesFromAllConversation } from '../../libs/conversation';
 import { getSettings } from '../../store/selectors/settings';
 import { getContactRequest } from '../../libs/contact';
+import { Account } from '../../storage';
 
 const Main = () => {
   const passwordHash = useSelector(getPasswordHash);
   const iotaSettings = getIotaSettings(useSelector(getSettings));
 
   useEffect(() => {
+    console.log(Account.data);
     let seed;
     getSeed(passwordHash, 'string')
       .then(result => {

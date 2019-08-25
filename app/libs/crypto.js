@@ -1,7 +1,7 @@
 import { trytesToAscii, asciiToTrytes } from '@iota/converter';
 import { MAX_SEED_LENGTH, ALIAS_REALM } from '../constants/iota';
 import { generateAddress } from './iota';
-import { Account } from '../storage';
+import { Account, Contact } from '../storage';
 import { byteToChar } from './converter';
 import { updateMamChannel } from './mam';
 
@@ -242,7 +242,7 @@ export const addAccount = async (iotaSettings, username, seed, passwordHash) => 
     mamRoot
   };
   Account.update(accountData);
-
+  Contact.add({ username, publicKey, mamRoot });
   return true;
 };
 

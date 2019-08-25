@@ -4,7 +4,6 @@ import { randomBytes } from './crypto';
 import { MAX_SEED_LENGTH } from '../constants/iota';
 import { byteToChar } from './converter';
 import { Conversation } from '../storage';
-import { updateMamChannel } from './mam';
 import { decryptMessage } from './message';
 
 export const createConversation = iotaSettings => {
@@ -36,7 +35,7 @@ export const saveConversation = (conversation, contacts) => {
 
 export const fetchNewMessagesFromConversation = async (iotaSettings, conversationRoot) => {
   const conversation = Conversation.getById(conversationRoot);
-  console.log(conversation);
+
   let mamState = MAM.init(iotaSettings, conversation.seed);
   mamState = MAM.changeMode(mamState, 'restricted', conversation.sideKey);
   let index = 0;

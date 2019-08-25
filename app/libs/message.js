@@ -6,7 +6,6 @@ export const decryptMessage = ({ message, senderRoot, createdTime, signature }) 
   const contact = Contact.getById(senderRoot);
   if (contact) {
     const { publicKey } = contact;
-    console.log('Public key', publicKey);
     if (verifySignatureRSA(message, signature, publicKey)) {
       return {
         sender: contact,
@@ -25,7 +24,6 @@ export const decryptMessage = ({ message, senderRoot, createdTime, signature }) 
  */
 export const createMessage = (message, privateKey) => {
   const { mamRoot } = Account.data;
-  console.log('Private key', privateKey);
   const signature = signRSA(message, privateKey);
   const createdTime = now();
 

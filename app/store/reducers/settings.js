@@ -1,9 +1,9 @@
 import { SettingsActionTypes } from '../types';
-import { DEFAULT_MAINNET_DOMAIN } from '../../constants/iota';
+import { DEFAULT_DEVNET_DOMAIN } from '../../constants/iota';
 
 export const initialState = {
-  nodeDomain: DEFAULT_MAINNET_DOMAIN,
-  isDevnet: false,
+  nodeDomain: DEFAULT_DEVNET_DOMAIN,
+  isDevnet: true,
   isLocalPOW: false
 };
 const settings = (state = initialState, action) => {

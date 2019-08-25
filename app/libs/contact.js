@@ -120,7 +120,7 @@ export const getContactRequest = async (iotaSettings, passwordHash) => {
       continue;
     }
   }
-  console.log(conversations);
+
   conversations.forEach(conversation => {
     const checkContact = Contact.getById(conversation.senderRoot);
     if (!checkContact) {
