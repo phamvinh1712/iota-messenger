@@ -22,12 +22,17 @@ export const updateMamChannel = async (iotaSettings, data, seed, mode, sideKey, 
 
   const root = MAM.getRoot(mamState);
   let result;
-  if (mode === 'restricted' && sideKey) {
-    console.log('MAM sidekey', sideKey);
-    result = await MAM.fetch(root, mode, sideKey);
-  } else {
-    result = await MAM.fetch(root, mode);
+  try {
+    if (mode === 'restricted' && sideKey) {
+      console.log('MAM sidekey', sideKey);
+      result = await MAM.fetch(root, mode, sideKey);
+    } else {
+      result = await MAM.fetch(root, mode);
+    }
+  } catch (e) {
+    throw new Error(e);
   }
+
   if (result && result.messages) {
     mamState.channel.start += result.messages.length;
   }
@@ -37,6 +42,7 @@ export const updateMamChannel = async (iotaSettings, data, seed, mode, sideKey, 
     await MAM.attach(message.payload, message.address, DEFAULT_DEPTH, DEFAULT_MIN_WEIGHT_MAGNITUDE);
   } catch (e) {
     console.log(e);
+    throw new Error(e);
   }
 
   console.log('MAM state', root);

@@ -58,11 +58,11 @@ const Login = props => {
         await getTransactionsFromAccount(iotaSettings, seed);
         await getContactRequest(passwordHash);
         updateContactData(iotaSettings);
+        props.history.push(routes.MAIN);
       } catch (e) {
         console.log(e);
+        dispatch(notify('error', 'Cannot login, it might be the server error'));
       }
-
-      props.history.push(routes.MAIN);
     }
     return dispatch(finishLoadingApp());
   };

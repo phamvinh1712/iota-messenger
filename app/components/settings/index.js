@@ -58,6 +58,11 @@ const Settings = props => {
     }
   };
 
+  const saveNodeDomain = () => {
+    dispatch(setNodeDomain(nodeDomain));
+    dispatch(notify('success', 'Save node domain success'));
+  };
+
   return (
     <Container component="div" maxWidth="sm">
       <div className={classes.paper}>
@@ -100,7 +105,14 @@ const Settings = props => {
           />
         </FormControl>
 
-        <Button type="submit" fullWidth variant="contained" color="primary" className={classes.submit}>
+        <Button
+          type="submit"
+          fullWidth
+          variant="contained"
+          color="primary"
+          className={classes.submit}
+          onClick={saveNodeDomain}
+        >
           Save
         </Button>
         <Button

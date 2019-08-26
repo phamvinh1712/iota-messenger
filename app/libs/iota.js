@@ -54,7 +54,10 @@ export const sendTransfer = (iotaSettings, seed, transfers) => {
       return iota.sendTrytes(trytes, DEFAULT_DEPTH, DEFAULT_MIN_WEIGHT_MAGNITUDE);
     })
     .then(result => console.log('Finish send trytes:', result))
-    .catch(error => console.log('Send transfer error', error));
+    .catch(error => {
+      console.log('Send transfer error', error);
+      throw new Error(error);
+    });
 };
 
 export const performPow = (

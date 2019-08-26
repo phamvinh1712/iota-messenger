@@ -233,17 +233,19 @@ export const addAccount = async (iotaSettings, username, seed, passwordHash) => 
     publicKey,
     address
   };
-
-  const mamRoot = await updateMamChannel(iotaSettings, accountData, stringSeed, 'private');
-
-  accountData = {
-    ...accountData,
-    sideKey,
-    mamRoot
-  };
-  Account.update(accountData);
-  Contact.add({ username, publicKey, mamRoot });
-  return true;
+  try {
+    const mamRoot = await updateMamChannel(iotaSettings, accountData, stringSeed, 'private');
+    accountData = {
+      ...accountData,
+      sideKey,
+      mamRoot
+    };
+    Account.update(accountData);
+    Contact.add({ username, publicKey, mamRoot });
+    return true;
+  } catch (e) {
+    throw new Error(e);
+  }
 };
 
 export const removeAccount = async usernameHash => {
