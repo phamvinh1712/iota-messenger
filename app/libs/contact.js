@@ -8,6 +8,7 @@ import { Account, Contact, Conversation } from '../storage';
 import { createConversation, saveConversation } from './conversation';
 import { decryptRSA, encryptRSA, getKey, getSeed } from './crypto';
 import { getMamRoot, updateMamChannel } from './mam';
+import { composeAPI } from '@iota/core';
 
 export const fetchContactInfo = async (iotaSettings, mamRoot) => {
   const mamState = MAM.init(iotaSettings);
@@ -101,23 +102,24 @@ export const getContactRequest = async (iotaSettings, passwordHash) => {
 
   const bundles = groupBy(transactions, 'bundle');
 
-  for (const key of Object.keys(bundles)) {
-    const message = sortBy(bundles[key], ['currentIndex'])
-      .map(transaction => transaction.signatureMessageFragment)
-      .join('');
+  await Promise.all(
+    Object.keys(bundles).map(async key => {
+      const message = sortBy(bundles[key], ['currentIndex'])
+        .map(transaction => transaction.signatureMessageFragment)
+        .join('');
 
-    const trimmedMessage = trimEnd(message, '9');
+      const trimmedMessage = trimEnd(message, '9');
 
-    try {
-      const messageData = JSON.parse(trytesToAscii(trimmedMessage));
-      const decryptedData = await decryptContactRequest(iotaSettings, messageData, privateKey);
-      console.log(decryptedData);
-      if (decryptedData) conversations.push(decryptedData);
-    } catch (e) {
-      console.log(e);
-      continue;
-    }
-  }
+      try {
+        const messageData = JSON.parse(trytesToAscii(trimmedMessage));
+        const decryptedData = await decryptContactRequest(iotaSettings, messageData, privateKey);
+        console.log(decryptedData);
+        if (decryptedData) conversations.push(decryptedData);
+      } catch (e) {
+        console.log(e);
+      }
+    })
+  );
 
   conversations.forEach(conversation => {
     console.log(conversations);
