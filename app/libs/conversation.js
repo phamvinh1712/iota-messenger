@@ -12,11 +12,13 @@ export const createConversation = iotaSettings => {
     .join('');
   let mamState = MAM.init(iotaSettings);
   mamState = MAM.changeMode(mamState, 'restricted', sideKey);
+  const newMessage = MAM.create(mamState, '');
   const mamRoot = MAM.getRoot(mamState);
   const newConversation = {
     sideKey,
     mamRoot,
-    seed: mamState.seed
+    seed: mamState.seed,
+    currentAddress: newMessage.address
   };
 
   return newConversation;

@@ -40,7 +40,9 @@ export const sendContactRequest = async (iotaSettings, passwordHash, mamRoot) =>
 
       const requestMessage = {};
       Object.keys(conversation).forEach(key => {
-        requestMessage[key] = encryptRSA(conversation[key], contactInfo.publicKey);
+        if (key !== 'currentAddress') {
+          requestMessage[key] = encryptRSA(conversation[key], contactInfo.publicKey);
+        }
       });
 
       const seed = await getSeed(passwordHash, 'string');

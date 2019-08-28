@@ -38,6 +38,7 @@ const Main = () => {
               try {
                 await getTransactionsFromAccount(iotaSettings, seed);
                 await getContactRequest(iotaSettings, passwordHash);
+                conversationAddresses = Conversation.getAddress();
               } catch (e) {
                 console.log(e);
               }
