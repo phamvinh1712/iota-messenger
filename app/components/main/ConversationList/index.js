@@ -50,7 +50,7 @@ const ConversationList = () => {
       dispatch(notify('error', 'Cannot find information for this address'));
     } else {
       const contact = Contact.getById(address);
-      if (contact) {
+      if (address !== accountData.mamRoot && contact) {
         dispatch(notify('error', 'This contact has already been added'));
       } else {
         fetchedData.mamRoot = address;
@@ -95,6 +95,7 @@ const ConversationList = () => {
 
   const changeUsername = async () => {
     const oldUsername = accountData.username;
+    setIsSavingUsername(true);
     try {
       const seed = await getSeed(passwordHash, 'string');
       const updatedAccountData = {
@@ -110,6 +111,7 @@ const ConversationList = () => {
       Account.update({ username: oldUsername });
       dispatch(notify('error', 'Change username failed'));
     }
+    setIsSavingUsername(false);
   };
 
   useEffect(() => {
@@ -125,7 +127,7 @@ const ConversationList = () => {
         return {
           username: conversation.participants[0].username,
           lastMessage,
-          mamRoot: conversation.mamRoot
+          seed: conversation.seed
         };
       })
     );
@@ -143,7 +145,7 @@ const ConversationList = () => {
         />
         <ConversationSearch />
         {conversations.map(conversation => (
-          <ConversationListItem key={conversation.mamRoot} data={conversation} />
+          <ConversationListItem key={conversation.seed} data={conversation} />
         ))}
       </div>
       <Dialog fullWidth maxWidth="sm" open={openAddDialog} onClose={closeAddDialog} aria-labelledby="form-dialog-title">

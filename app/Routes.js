@@ -11,6 +11,8 @@ import Notification from './components/notification/NotificationSnackbar';
 import { Account, initialiseStorage } from './storage';
 import { getRealmEncryptionKey } from './libs/crypto';
 import { setLandingComplete } from './store/actions/account';
+import { getNodeList } from './libs/iota';
+import { setConversationAddresses } from './store/actions/main';
 
 export default props => {
   const dispatch = useDispatch();
@@ -25,6 +27,7 @@ export default props => {
   useEffect(() => {
     initialiseStorage(getRealmEncryptionKey)
       .then(async () => {
+        await getNodeList();
         const account = Account.data;
         if (account && account.landingComplete) {
           dispatch(setLandingComplete());

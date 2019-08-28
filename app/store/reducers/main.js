@@ -2,8 +2,9 @@ import { MainActionTypes } from '../types';
 
 export const initialState = {
   password: '',
-  currentConversationRoot: '',
-  selfMamRoot: ''
+  currentConversationSeed: '',
+  selfMamRoot: '',
+  conversationAddresses: []
 };
 
 const main = (state = initialState, action) => {
@@ -13,15 +14,20 @@ const main = (state = initialState, action) => {
         ...state,
         password: action.password
       };
-    case MainActionTypes.SET_CURRENT_CONVERSATION_ROOT:
+    case MainActionTypes.SET_CURRENT_CONVERSATION_SEED:
       return {
         ...state,
-        currentConversationRoot: action.mamRoot
+        currentConversationSeed: action.seed
       };
     case MainActionTypes.SET_SELF_MAM_ROOT:
       return {
         ...state,
         selfMamRoot: action.mamRoot
+      };
+    case MainActionTypes.SET_CONVERSATION_ADDRESSES:
+      return {
+        ...state,
+        conversationAddresses: action.conversationAddresses
       };
     default:
       return state;

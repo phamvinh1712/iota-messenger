@@ -45,13 +45,14 @@ export const MessageSchema = {
 
 export const ConversationSchema = {
   name: 'Conversation',
-  primaryKey: 'mamRoot',
+  primaryKey: 'seed',
   properties: {
     participants: { type: 'Contact[]', default: [] },
     messages: { type: 'Message[]', default: [] },
     mamRoot: 'string',
     sideKey: 'string',
-    seed: 'string'
+    seed: 'string',
+    currentAddress: 'string?'
   }
 };
 
@@ -86,4 +87,36 @@ export const TransactionSchema = {
   }
 };
 
-export default [AccountSchema, ContactSchema, MessageSchema, ConversationSchema, TransactionSchema];
+export const NodeSchema = {
+  name: 'Node',
+  primaryKey: 'url',
+  properties: {
+    url: 'string',
+    health: 'int?',
+    pow: { type: 'bool', default: false }
+  }
+};
+
+export const MamQueueSchema = {
+  name: 'MamQueue',
+  primaryKey: 'uuid',
+  properties: {
+    uuid: 'string',
+    trytes: 'string',
+    seed: 'string',
+    mode: 'string',
+    sideKey: { type: 'string', default: '' },
+    isChat: { type: 'bool', default: false },
+    addedTime: 'date'
+  }
+};
+
+export default [
+  AccountSchema,
+  ContactSchema,
+  MessageSchema,
+  ConversationSchema,
+  TransactionSchema,
+  NodeSchema,
+  MamQueueSchema
+];

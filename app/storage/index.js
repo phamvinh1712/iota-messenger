@@ -1,5 +1,9 @@
 import assign from 'lodash/assign';
+import each from 'lodash/each';
+import filter from 'lodash/filter';
+import includes from 'lodash/includes';
 import map from 'lodash/map';
+import size from 'lodash/size';
 import schemas, { STORAGE_PATH } from './schema';
 import { parse, serialise } from '../libs/utils';
 
@@ -95,7 +99,14 @@ class Conversation {
 
   static get keys() {
     const conversations = realm.objects('Conversation');
-    if (conversations.length) return conversations.map(conversation => conversation.mamRoot);
+    if (conversations.length) return conversations.map(conversation => conversation.seed);
+    return [];
+  }
+
+  static getAddress() {
+    const conversations = realm.objects('Conversation');
+    if (conversations.length)
+      return conversations.map(conversation => ({ seed: conversation.seed, address: conversation.currentAddress }));
     return [];
   }
 
@@ -164,6 +175,85 @@ class Conversation {
     }
     return null;
   }
+
+  static updateById(id, data) {
+    const conversation = Conversation.getById(id);
+    if (!conversation) return;
+    realm.write(() => {
+      assign(conversation, { ...data });
+    });
+  }
+}
+
+class Node {
+  static getById(id) {
+    return realm.objectForPrimaryKey('Node', id);
+  }
+
+  static get data() {
+    return realm.objects('Node').sorted('health', true);
+  }
+
+  static getDataAsArray() {
+    return map(Node.data, node => parse(serialise(node)));
+  }
+
+  static delete(url) {
+    const node = Node.getById(url);
+
+    realm.write(() => realm.delete(node));
+  }
+
+  static addNodes(nodes) {
+    if (size(nodes)) {
+      const existingNodes = Node.getDataAsArray();
+      const existingUrls = map(existingNodes, node => node.url);
+
+      realm.write(() => {
+        each(nodes, node => {
+          // If it's an existing node, just update properties.
+          if (includes(existingUrls, node.url)) {
+            realm.create('Node', node, 'modified');
+          } else {
+            realm.create('Node', node);
+          }
+        });
+
+        const newNodesUrls = map(nodes, node => node.url);
+        const nodesToRemove = filter(existingNodes, node => node.custom === false && !includes(newNodesUrls, node.url));
+
+        each(nodesToRemove, node => {
+          realm.delete(Node.getById(node.url));
+        });
+      });
+    }
+  }
+}
+
+class MamQueue {
+  static getById(id) {
+    return realm.objectForPrimaryKey('MamQueue', id);
+  }
+
+  static get data() {
+    return realm.objects('MamQueue').sorted('addedTime');
+  }
+
+  static add(data) {
+    realm.write(() => {
+      realm.create('MamQueue', data);
+    });
+  }
+
+  static getDataAsArray() {
+    return map(MamQueue.data, mam => parse(serialise(mam)));
+  }
+
+  static delete(uuid) {
+    const mam = MamQueue.getById(uuid);
+
+    realm.write(() => realm.delete(mam));
+  }
 }
 
 const purge = () =>
@@ -192,4 +282,4 @@ const initialiseStorage = getEncryptionKeyPromise => {
 };
 const resetStorage = getEncryptionKeyPromise => purge().then(() => initialiseStorage(getEncryptionKeyPromise));
 
-export { Account, Contact, Conversation, initialiseStorage, realm, resetStorage };
+export { MamQueue, Node, Account, Contact, Conversation, initialiseStorage, realm, resetStorage };

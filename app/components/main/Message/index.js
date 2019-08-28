@@ -5,7 +5,7 @@ import style from './Message.css';
 const Message = props => {
   const { data, isMine, startsSequence, endsSequence, showTimestamp } = props;
 
-  const friendlyTimestamp = moment(data.timestamp).format('LLLL');
+  const friendlyTimestamp = moment(data.createdTime).format('LLLL');
   return (
     <div
       className={[

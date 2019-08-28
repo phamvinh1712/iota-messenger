@@ -34,6 +34,14 @@ export const DEFAULT_DEPTH = 4;
 
 export const DEFAULT_MIN_WEIGHT_MAGNITUDE = 14;
 
-export const DEFAULT_MAINNET_DOMAIN = 'https://nodes.thetangle.org:443';
+export const DEFAULT_MAINNET_DOMAIN = 'https://nodes.iota.org:443';
 
 export const DEFAULT_DEVNET_DOMAIN = 'https://nodes.devnet.iota.org:443';
+
+export const DEFAULT_DEVNET_ZMQ = 'tcp://zmq.devnet.iota.org:5556';
+
+export const NODE_LIST_API = 'https://iota.dance/api/ssl/live';
+
+export const ZMP_PORT = '5556';
+
+export const DEFAULT_PORT = '443';

@@ -12,24 +12,30 @@ import Divider from '@material-ui/core/Divider';
 import Switch from '@material-ui/core/Switch';
 import Radio from '@material-ui/core/Radio';
 import RadioGroup from '@material-ui/core/RadioGroup';
+import OutlinedInput from '@material-ui/core/OutlinedInput';
+import MenuItem from '@material-ui/core/MenuItem';
+import Select from '@material-ui/core/Select';
+import find from 'lodash/find';
 import styles from './styles';
 import { getSettings } from '../../store/selectors/settings';
-import { setIsDevnet, setIsLocalPOW, setNodeDomain } from '../../store/actions/settings';
-import TextField from '@material-ui/core/TextField';
+import { checkAndSetIsDevnet, setHealthiestMainNode, setIsLocalPOW, setNodeDomain } from '../../store/actions/settings';
 import { clearVault, getRealmEncryptionKey } from '../../libs/crypto';
 import { ALIAS_REALM } from '../../constants/iota';
-import { resetStorage } from '../../storage';
+import { resetStorage, Node } from '../../storage';
 import { notify } from '../../store/actions/ui';
 
 const Settings = props => {
   const { classes } = props;
   const dispatch = useDispatch();
   const settings = useSelector(getSettings);
-  const [nodeDomain, setLocalNodeDomain] = useState('');
+  const [nodeList, setNodeList] = useState(Node.getDataAsArray());
 
   useEffect(() => {
-    setLocalNodeDomain(settings.nodeDomain);
-  });
+    setNodeList(Node.getDataAsArray());
+    if (nodeList.length) {
+      dispatch(setHealthiestMainNode(nodeList[0].url));
+    }
+  }, []);
 
   const handleChangeNetwork = event => {
     const { value } = event.target;
@@ -39,10 +45,32 @@ const Settings = props => {
     } else {
       result = false;
     }
-    dispatch(setIsDevnet(result));
+    dispatch(checkAndSetIsDevnet(result));
+  };
+
+  const handleChangeDomain = event => {
+    console.log(event.target);
+    const newDomain = event.target.value;
+    if (newDomain) {
+      console.log(newDomain);
+      const node = find(nodeList, ['url', newDomain]);
+      if (!node.pow && !settings.isLocalPOW) {
+        dispatch(setIsLocalPOW(true));
+        dispatch(notify('info', 'POW is not supported on the chosen node, local POW must be used'));
+      }
+      dispatch(setNodeDomain(newDomain));
+    }
   };
 
   const handleChangePOW = event => {
+    const localPOW = event.target.checked;
+    if (!settings.isDevnet && !localPOW) {
+      const node = find(nodeList, ['url', settings.nodeDomain]);
+      if (node && !node.pow) {
+        dispatch(notify('error', "The chosen node doesn't support POW, please choose another node"));
+        return;
+      }
+    }
     dispatch(setIsLocalPOW(event.target.checked));
   };
 
@@ -56,11 +84,6 @@ const Settings = props => {
       console.log('e');
       dispatch(notify('error', 'Reset application failed'));
     }
-  };
-
-  const saveNodeDomain = () => {
-    dispatch(setNodeDomain(nodeDomain));
-    dispatch(notify('success', 'Save node domain success'));
   };
 
   return (
@@ -94,27 +117,20 @@ const Settings = props => {
           </RadioGroup>
         </FormControl>
 
-        <FormControl fullWidth component="fieldset">
-          <FormLabel component="legend">Current domain</FormLabel>
-          <TextField
-            type="text"
-            fullWidth
-            onChange={e => setLocalNodeDomain(e.event.target)}
-            value={nodeDomain}
-            variant="outlined"
-          />
+        <FormControl fullWidth variant="outlined" className={classes.formControl} disabled={settings.isDevnet}>
+          <Select
+            value={settings.isDevnet ? '' : settings.nodeDomain}
+            onChange={handleChangeDomain}
+            input={<OutlinedInput name="age" id="outlined-age-simple" />}
+          >
+            <MenuItem value=""></MenuItem>
+            {nodeList.map(node => (
+              <MenuItem value={node.url}>
+                {node.url} {node.pow ? ' | POW' : ''}
+              </MenuItem>
+            ))}
+          </Select>
         </FormControl>
-
-        <Button
-          type="submit"
-          fullWidth
-          variant="contained"
-          color="primary"
-          className={classes.submit}
-          onClick={saveNodeDomain}
-        >
-          Save
-        </Button>
         <Button
           type="submit"
           fullWidth

@@ -1,9 +1,16 @@
 import { composeAPI } from '@iota/core';
 import { asciiToTrytes } from '@iota/converter';
 import isFunction from 'lodash/isFunction';
+import axios from 'axios';
 import { get } from 'lodash';
-import { DEFAULT_MIN_WEIGHT_MAGNITUDE, DEFAULT_DEPTH } from '../constants/iota';
-import { Account } from '../storage';
+import {
+  DEFAULT_MIN_WEIGHT_MAGNITUDE,
+  DEFAULT_DEPTH,
+  NODE_LIST_API,
+  DEFAULT_DEVNET_ZMQ,
+  DEFAULT_MAINNET_DOMAIN
+} from '../constants/iota';
+import { Account, Node } from '../storage';
 
 export const getTransactionsFromAccount = (iotaSettings, seed) =>
   new Promise((resolve, reject) => {
@@ -109,4 +116,35 @@ export const getIotaSettings = ({ isLocalPOW, nodeDomain }) => {
 
 export const getIOTA = settings => {
   return composeAPI(settings);
+};
+
+export const getNodeList = async () => {
+  const result = await axios.get(NODE_LIST_API);
+
+  const nodes = [];
+  nodes.push({ url: DEFAULT_MAINNET_DOMAIN, health: 5, pow: false });
+
+  if (result.data) {
+    await Promise.all(
+      result.data.map(async node => {
+        const iota = composeAPI({
+          provider: node.node
+        });
+
+        const info = await iota.getNodeInfo();
+        if (info && info.hasOwnProperty('features') && info.features.includes('zeroMessageQueue')) {
+          nodes.push({ url: node.node, health: node.health, pow: node.pow });
+        }
+      })
+    );
+  }
+
+  Node.addNodes(nodes);
+  console.log('Nodes', Node.getDataAsArray());
+};
+
+export const getZmqDomain = url => {
+  if (url.includes('devnet')) return DEFAULT_DEVNET_ZMQ;
+
+  return url.replace('https', 'tcp').replace('443', '5556');
 };

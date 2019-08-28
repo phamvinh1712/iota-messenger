@@ -1,43 +1,57 @@
 import React, { useEffect } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
+import zmq from 'zeromq';
+import find from 'lodash/find';
 import Messenger from './Messenger';
 import { getSeed } from '../../libs/crypto';
-import { getPasswordHash } from '../../store/selectors/main';
-import { getIotaSettings, getTransactionsFromAccount } from '../../libs/iota';
-import { fetchNewMessagesFromAllConversation } from '../../libs/conversation';
+import { getConversationAddresses, getPasswordHash } from '../../store/selectors/main';
+import { getIotaSettings, getTransactionsFromAccount, getZmqDomain } from '../../libs/iota';
+import { fetchNewMessagesFromConversation } from '../../libs/conversation';
 import { getSettings } from '../../store/selectors/settings';
 import { getContactRequest } from '../../libs/contact';
-import { Account } from '../../storage';
-import { setSelfMamRoot } from '../../store/actions/main';
+import { Account, Conversation } from '../../storage';
+import { setConversationAddresses, setSelfMamRoot } from '../../store/actions/main';
 
 const Main = () => {
   const passwordHash = useSelector(getPasswordHash);
-  const iotaSettings = getIotaSettings(useSelector(getSettings));
+  const settings = useSelector(getSettings);
+  const iotaSettings = getIotaSettings(settings);
   const dispatch = useDispatch();
+  const socket = zmq.socket('sub');
+  const account = Account.data;
 
   useEffect(() => {
-    const account = Account.data;
     dispatch(setSelfMamRoot(account.mamRoot));
-    console.log(account);
-    let seed;
+    let conversationAddresses = Conversation.getAddress();
+    console.log(conversationAddresses);
     getSeed(passwordHash, 'string')
-      .then(result => {
-        seed = result;
+      .then(seed => {
+        const zmqDomain = getZmqDomain(settings.nodeDomain);
+        socket.connect(zmqDomain);
+        socket.subscribe('tx');
+        socket.on('message', async msg => {
+          const data = msg.toString().split(' ');
+
+          if (account.address.substring(0, 81) === data[2]) {
+            console.log(data);
+            if ((!data[7] && !data[6]) || data[7] === data[6]) {
+              try {
+                await getTransactionsFromAccount(iotaSettings, seed);
+                await getContactRequest(iotaSettings, passwordHash);
+              } catch (e) {
+                console.log(e);
+              }
+            }
+          }
+          const conversationAddress = find(conversationAddresses, ['address', data[2]]);
+          if (conversationAddress && ((!data[7] && !data[6]) || data[7] === data[6])) {
+            await fetchNewMessagesFromConversation(iotaSettings, conversationAddress.seed);
+            conversationAddresses = Conversation.getAddress();
+            console.log(conversationAddresses);
+          }
+        });
       })
       .catch(error => console.log('Error getting seed', error));
-
-    const interval = setInterval(async () => {
-      await fetchNewMessagesFromAllConversation(iotaSettings);
-      if (seed) {
-        try {
-          await getTransactionsFromAccount(iotaSettings, seed);
-          await getContactRequest(iotaSettings, passwordHash);
-        } catch (e) {
-          console.log(e);
-        }
-      }
-    }, 5000);
-    return () => clearInterval(interval);
   }, []);
 
   return (

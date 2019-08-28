@@ -109,7 +109,7 @@ export const getContactRequest = async (iotaSettings, passwordHash) => {
     try {
       const messageData = JSON.parse(trytesToAscii(trimmedMessage));
       const decryptedData = await decryptContactRequest(iotaSettings, messageData, privateKey);
-
+      console.log(decryptedData);
       if (decryptedData) conversations.push(decryptedData);
     } catch (e) {
       console.log(e);
@@ -118,6 +118,7 @@ export const getContactRequest = async (iotaSettings, passwordHash) => {
   }
 
   conversations.forEach(conversation => {
+    console.log(conversations);
     const checkContact = Contact.getById(conversation.senderRoot);
     if (!checkContact) {
       Contact.add({
@@ -126,14 +127,19 @@ export const getContactRequest = async (iotaSettings, passwordHash) => {
         username: conversation.sender.username
       });
     }
-    const checkConversation = Conversation.getById(conversation.mamRoot);
+    const checkConversation = Conversation.getById(conversation.seed);
     if (!checkConversation) {
+      let mamState = MAM.init(iotaSettings, conversation.seed);
+      mamState = MAM.changeMode(mamState, 'restricted', conversation.sideKey);
+      const message = MAM.create(mamState, '');
+
       Conversation.add({
         mamRoot: conversation.mamRoot,
         sideKey: conversation.sideKey,
-        seed: conversation.seed
+        seed: conversation.seed,
+        currentAddress: message.address
       });
-      Conversation.addParticipant(conversation.mamRoot, conversation.senderRoot);
+      Conversation.addParticipant(conversation.seed, conversation.senderRoot);
     }
   });
   return conversations;

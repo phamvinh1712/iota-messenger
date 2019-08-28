@@ -4,6 +4,7 @@ import { generateAddress } from './iota';
 import { Account, Contact } from '../storage';
 import { byteToChar } from './converter';
 import { updateMamChannel } from './mam';
+import { sendContactRequest } from './contact';
 
 const NodeRSA = require('node-rsa');
 

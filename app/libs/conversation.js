@@ -27,15 +27,15 @@ export const saveConversation = (conversation, contacts) => {
 
   if (contacts && contacts.length) {
     contacts.forEach(contact => {
-      Conversation.addParticipant(conversation.mamRoot, contact.mamRoot);
+      Conversation.addParticipant(conversation.seed, contact.mamRoot);
     });
   }
   return { ...conversation, participants: contacts };
 };
 
-export const fetchNewMessagesFromConversation = async (iotaSettings, conversationRoot) => {
-  const conversation = Conversation.getById(conversationRoot);
-
+export const fetchNewMessagesFromConversation = async (iotaSettings, conversationSeed) => {
+  const conversation = Conversation.getById(conversationSeed);
+  console.log(conversation);
   let mamState = MAM.init(iotaSettings, conversation.seed);
   mamState = MAM.changeMode(mamState, 'restricted', conversation.sideKey);
   let index = 0;
@@ -44,9 +44,10 @@ export const fetchNewMessagesFromConversation = async (iotaSettings, conversatio
     index = conversation.messages.length;
   }
   const root = MAM.getRoot(mamState);
+  console.log('root:', root);
   try {
     const result = await MAM.fetch(root, 'restricted', conversation.sideKey);
-
+    console.log(result);
     if (result && result.messages) {
       result.messages.forEach(message => {
         const parsedMessage = JSON.parse(trytesToAscii(message));
@@ -55,20 +56,23 @@ export const fetchNewMessagesFromConversation = async (iotaSettings, conversatio
 
           if (messageObj) {
             messageObj.index = index;
-            Conversation.addMessage(conversationRoot, messageObj);
+            Conversation.addMessage(conversationSeed, messageObj);
             index += 1;
           }
         }
       });
+      mamState.channel.start += result.messages.length;
     }
+    const newMessage = MAM.create(mamState, '');
+    Conversation.updateById(conversationSeed, { currentAddress: newMessage.address });
   } catch (e) {
     console.log(e);
   }
 };
 
 export const fetchNewMessagesFromAllConversation = iotaSettings => {
-  const conversationRoots = Conversation.keys;
-  conversationRoots.forEach(key => {
+  const conversationSeeds = Conversation.keys;
+  conversationSeeds.forEach(key => {
     fetchNewMessagesFromConversation(iotaSettings, key);
   });
 };

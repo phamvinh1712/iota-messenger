@@ -12,12 +12,13 @@ import styles from './landingStyle';
 import { hash, authorize, getSeed } from '../../libs/crypto';
 import { finishLoadingApp, notify, startLoadingApp } from '../../store/actions/ui';
 import routes from '../../constants/routes';
-import { setAppPassword } from '../../store/actions/main';
+import { setAppPassword, setConversationAddresses } from '../../store/actions/main';
 import { Account } from '../../storage';
 import { setAccountInfo } from '../../store/actions/account';
 import { getContactRequest, updateContactData } from '../../libs/contact';
 import { getTransactionsFromAccount, getIotaSettings } from '../../libs/iota';
 import { getSettings } from '../../store/selectors/settings';
+import { fetchNewMessagesFromAllConversation, fetchNewMessagesFromConversation } from '../../libs/conversation';
 
 const Login = props => {
   const dispatch = useDispatch();
@@ -56,8 +57,10 @@ const Login = props => {
 
       try {
         await getTransactionsFromAccount(iotaSettings, seed);
-        await getContactRequest(passwordHash);
+        await getContactRequest(iotaSettings, passwordHash);
         updateContactData(iotaSettings);
+        await fetchNewMessagesFromAllConversation(iotaSettings);
+        dispatch(setConversationAddresses());
         props.history.push(routes.MAIN);
       } catch (e) {
         console.log(e);

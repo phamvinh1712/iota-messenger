@@ -3,10 +3,10 @@ import shave from 'shave';
 import { useDispatch } from 'react-redux';
 
 import style from './ConversationListItem.css';
-import { setCurrentConversationRoot } from '../../../store/actions/main';
+import { setCurrentConversationSeed } from '../../../store/actions/main';
 
 const ConversationListItem = props => {
-  const { username, lastMessage, mamRoot } = props.data;
+  const { username, lastMessage, seed } = props.data;
   const dispatch = useDispatch();
 
   useEffect(() => {
@@ -14,7 +14,7 @@ const ConversationListItem = props => {
   });
 
   const onItemClick = () => {
-    dispatch(setCurrentConversationRoot(mamRoot));
+    dispatch(setCurrentConversationSeed(seed));
   };
 
   return (
