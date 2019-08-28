@@ -40,6 +40,8 @@ export const DEFAULT_DEVNET_DOMAIN = 'https://nodes.devnet.iota.org:443';
 
 export const DEFAULT_DEVNET_ZMQ = 'tcp://zmq.devnet.iota.org:5556';
 
+export const DEFAULT_MAINNET_ZMQ = 'tcp://nodes.iota.org:5556';
+
 export const NODE_LIST_API = 'https://iota.dance/api/ssl/live';
 
 export const ZMP_PORT = '5556';

@@ -8,7 +8,7 @@ import {
   DEFAULT_DEPTH,
   NODE_LIST_API,
   DEFAULT_DEVNET_ZMQ,
-  DEFAULT_MAINNET_DOMAIN
+  DEFAULT_MAINNET_DOMAIN, DEFAULT_MAINNET_ZMQ
 } from '../constants/iota';
 import { Account, Node } from '../storage';
 
@@ -146,5 +146,5 @@ export const getNodeList = async () => {
 export const getZmqDomain = url => {
   if (url.includes('devnet')) return DEFAULT_DEVNET_ZMQ;
 
-  return url.replace('https', 'tcp').replace('443', '5556');
+  return DEFAULT_MAINNET_ZMQ;
 };
