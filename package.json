@@ -273,6 +273,7 @@
     "react-redux": "^7.1.0",
     "react-router": "^5.0.0",
     "react-router-dom": "^5.0.0",
+    "react-window": "^1.8.5",
     "realm": "^3.0.0-beta.1",
     "redux": "^4.0.1",
     "redux-thunk": "^2.3.0",

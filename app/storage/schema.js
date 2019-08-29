@@ -32,7 +32,6 @@ export const ContactSchema = {
 
 export const MessageSchema = {
   name: 'Message',
-  primaryKey: 'index',
   properties: {
     sender: 'Contact',
     content: 'string',

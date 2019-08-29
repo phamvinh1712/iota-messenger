@@ -5,7 +5,7 @@ import sortBy from 'lodash/sortBy';
 import trimEnd from 'lodash/trimEnd';
 import { sendTransfer } from './iota';
 import { Account, Contact, Conversation } from '../storage';
-import { createConversation, saveConversation } from './conversation';
+import { createConversation, saveConversation, updateConversationParticipants } from './conversation';
 import { decryptRSA, encryptRSA, getKey, getSeed } from './crypto';
 import { getMamRoot, updateMamChannel } from './mam';
 import { composeAPI } from '@iota/core';
@@ -28,7 +28,7 @@ export const fetchContactInfo = async (iotaSettings, mamRoot) => {
   }
 };
 
-export const sendContactRequest = async (iotaSettings, passwordHash, mamRoot) => {
+export const sendConversationRequest = async (iotaSettings, passwordHash, mamRoot) => {
   const contactInfo = await fetchContactInfo(iotaSettings, mamRoot);
   if (contactInfo && contactInfo.username && contactInfo.publicKey && contactInfo.address) {
     try {
@@ -121,31 +121,36 @@ export const getContactRequest = async (iotaSettings, passwordHash) => {
     })
   );
 
-  conversations.forEach(conversation => {
-    console.log(conversations);
-    const checkContact = Contact.getById(conversation.senderRoot);
-    if (!checkContact) {
-      Contact.add({
-        mamRoot: conversation.senderRoot,
-        publicKey: conversation.sender.publicKey,
-        username: conversation.sender.username
-      });
-    }
-    const checkConversation = Conversation.getById(conversation.seed);
-    if (!checkConversation) {
-      let mamState = MAM.init(iotaSettings, conversation.seed);
-      mamState = MAM.changeMode(mamState, 'restricted', conversation.sideKey);
-      const message = MAM.create(mamState, '');
+  await Promise.all(
+    conversations.map(async conversation => {
+      console.log(conversations);
+      const checkContact = Contact.getById(conversation.senderRoot);
+      if (!checkContact) {
+        Contact.add({
+          mamRoot: conversation.senderRoot,
+          publicKey: conversation.sender.publicKey,
+          username: conversation.sender.username
+        });
+      }
+      const checkConversation = Conversation.getById(conversation.seed);
+      if (!checkConversation) {
+        let mamState = MAM.init(iotaSettings, conversation.seed);
+        mamState = MAM.changeMode(mamState, 'restricted', conversation.sideKey);
+        const message = MAM.create(mamState, '');
 
-      Conversation.add({
-        mamRoot: conversation.mamRoot,
-        sideKey: conversation.sideKey,
-        seed: conversation.seed,
-        currentAddress: message.address
-      });
-      Conversation.addParticipant(conversation.seed, conversation.senderRoot);
-    }
-  });
+        updateMamChannel(iotaSettings, Account.data.mamRoot, conversation.seed, 'private');
+
+        Conversation.add({
+          mamRoot: conversation.mamRoot,
+          sideKey: conversation.sideKey,
+          seed: conversation.seed,
+          currentAddress: message.address
+        });
+        Conversation.addParticipant(conversation.seed, conversation.senderRoot);
+        await updateConversationParticipants(iotaSettings, conversation.seed);
+      }
+    })
+  );
   return conversations;
 };
 

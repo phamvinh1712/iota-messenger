@@ -4,26 +4,32 @@ import zmq from 'zeromq';
 import find from 'lodash/find';
 import Messenger from './Messenger';
 import { getSeed } from '../../libs/crypto';
-import { getConversationAddresses, getPasswordHash } from '../../store/selectors/main';
+import { getPasswordHash } from '../../store/selectors/main';
 import { getIotaSettings, getTransactionsFromAccount, getZmqDomain } from '../../libs/iota';
 import { fetchNewMessagesFromConversation } from '../../libs/conversation';
 import { getSettings } from '../../store/selectors/settings';
 import { getContactRequest } from '../../libs/contact';
 import { Account, Conversation } from '../../storage';
-import { setConversationAddresses, setSelfMamRoot } from '../../store/actions/main';
+import { setSelfMamRoot } from '../../store/actions/main';
 
 const Main = () => {
   const passwordHash = useSelector(getPasswordHash);
   const settings = useSelector(getSettings);
   const iotaSettings = getIotaSettings(settings);
   const dispatch = useDispatch();
-  const socket = zmq.socket('sub');
   const account = Account.data;
+  let conversationAddresses;
+
+  function updateConversationAddress() {
+    conversationAddresses = Conversation.getAddress();
+    console.log(conversationAddresses);
+  }
 
   useEffect(() => {
     dispatch(setSelfMamRoot(account.mamRoot));
-    let conversationAddresses = Conversation.getAddress();
+    conversationAddresses = Conversation.getAddress();
     console.log(conversationAddresses);
+    const socket = zmq.socket('sub');
     getSeed(passwordHash, 'string')
       .then(seed => {
         const zmqDomain = getZmqDomain(settings.nodeDomain);
@@ -53,11 +59,12 @@ const Main = () => {
         });
       })
       .catch(error => console.log('Error getting seed', error));
+    return () => socket.close();
   }, []);
 
   return (
     <React.Fragment>
-      <Messenger />
+      <Messenger updateConversationAddress={updateConversationAddress} />
     </React.Fragment>
   );
 };

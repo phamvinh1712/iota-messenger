@@ -9,6 +9,9 @@ import Button from '@material-ui/core/Button';
 import Dialog from '@material-ui/core/Dialog';
 import CircularProgress from '@material-ui/core/CircularProgress';
 import CheckIcon from '@material-ui/icons/Check';
+import ListItem from '@material-ui/core/ListItem';
+import ListItemText from '@material-ui/core/ListItemText';
+import { FixedSizeList } from 'react-window';
 import ConversationSearch from '../ConversationSearch';
 import Toolbar from '../Toolbar';
 import ToolbarButton from '../ToolbarButton';
@@ -16,13 +19,13 @@ import style from './ConversationList.css';
 import ConversationListItem from '../ConversationListItem';
 import { finishLoadingConversationList, notify, startLoadingConversationList } from '../../../store/actions/ui';
 import { Account, Contact, Conversation } from '../../../storage';
-import { fetchContactInfo, sendContactRequest } from '../../../libs/contact';
+import { fetchContactInfo, sendConversationRequest } from '../../../libs/contact';
 import { getSettings } from '../../../store/selectors/settings';
 import { getIotaSettings } from '../../../libs/iota';
 import { updateMamChannel } from '../../../libs/mam';
 import { getSeed } from '../../../libs/crypto';
 
-const ConversationList = () => {
+const ConversationList = ({ updateConversationAddress }) => {
   const dispatch = useDispatch();
   const [openAddDialog, setOpenAddDialog] = useState(false);
   const [isCheckingSuccess, setIsCheckingSuccess] = useState(false);
@@ -36,6 +39,7 @@ const ConversationList = () => {
   const accountData = Account.data;
   const [username, setUsername] = useState(accountData.username);
   const [isSavingUsername, setIsSavingUsername] = useState(false);
+  const [contactList, setContactList] = useState([]);
 
   const closeAddDialog = () => {
     setOpenAddDialog(false);
@@ -45,13 +49,14 @@ const ConversationList = () => {
 
   const checkAddress = async address => {
     setIsCheckingAddress(true);
-    const fetchedData = await fetchContactInfo(iotaSettings, address);
-    if (!fetchedData) {
-      dispatch(notify('error', 'Cannot find information for this address'));
+    const contact = Contact.getById(address);
+    if (contact) {
+      setNewContact(contact);
+      setIsCheckingSuccess(true);
     } else {
-      const contact = Contact.getById(address);
-      if (address !== accountData.mamRoot && contact) {
-        dispatch(notify('error', 'This contact has already been added'));
+      const fetchedData = await fetchContactInfo(iotaSettings, address);
+      if (!fetchedData) {
+        dispatch(notify('error', 'Cannot find information for this address'));
       } else {
         fetchedData.mamRoot = address;
         console.log(fetchedData);
@@ -76,11 +81,12 @@ const ConversationList = () => {
     if (newContact && newContact.mamRoot) {
       closeAddDialog();
       dispatch(startLoadingConversationList());
-      sendContactRequest(iotaSettings, passwordHash, newContact.mamRoot)
+      sendConversationRequest(iotaSettings, passwordHash, newContact.mamRoot)
         .then(bool => {
           dispatch(finishLoadingConversationList());
           if (bool) {
             dispatch(notify('success', 'New contact added'));
+            updateConversationAddress();
           } else {
             dispatch(notify('error', 'Add new contact fail'));
           }
@@ -116,7 +122,7 @@ const ConversationList = () => {
 
   useEffect(() => {
     const conversationList = Conversation.getDataAsArray();
-
+    setContactList(Contact.getDataAsArray());
     setConversations(
       conversationList.map(conversation => {
         let lastMessage = '';
@@ -125,7 +131,7 @@ const ConversationList = () => {
           lastMessage = conversation.messages[length - 1].content;
         }
         return {
-          username: conversation.participants[0].username,
+          conversationName: conversation.participants.map(participant => participant.username).join(','),
           lastMessage,
           seed: conversation.seed
         };
@@ -149,7 +155,7 @@ const ConversationList = () => {
         ))}
       </div>
       <Dialog fullWidth maxWidth="sm" open={openAddDialog} onClose={closeAddDialog} aria-labelledby="form-dialog-title">
-        <DialogTitle id="form-dialog-title">New contact</DialogTitle>
+        <DialogTitle id="form-dialog-title">New conversation</DialogTitle>
         <DialogContent>
           <DialogContentText>
             Add contact
@@ -205,6 +211,13 @@ const ConversationList = () => {
             onChange={e => setUsername(e.target.value)}
             fullWidth
           />
+          <FixedSizeList height={200} width={360} itemSize={46} itemCount={200}>
+            {contactList.map(contact => (
+              <ListItem>
+                <ListItemText primary={contact.username} secondary={contact.mamRoot} />
+              </ListItem>
+            ))}
+          </FixedSizeList>
         </DialogContent>
 
         <DialogActions>

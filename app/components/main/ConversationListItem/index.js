@@ -6,7 +6,7 @@ import style from './ConversationListItem.css';
 import { setCurrentConversationSeed } from '../../../store/actions/main';
 
 const ConversationListItem = props => {
-  const { username, lastMessage, seed } = props.data;
+  const { conversationName, lastMessage, seed } = props.data;
   const dispatch = useDispatch();
 
   useEffect(() => {
@@ -25,7 +25,7 @@ const ConversationListItem = props => {
       {/*  alt="conversation"*/}
       {/*/>*/}
       <div>
-        <h1 className={style.conversationTitle}>{username}</h1>
+        <h1 className={style.conversationTitle}>{conversationName}</h1>
         <p className={style.conversationSnippet}>{lastMessage}</p>
       </div>
     </div>

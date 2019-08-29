@@ -18,7 +18,7 @@ import { setAccountInfo } from '../../store/actions/account';
 import { getContactRequest, updateContactData } from '../../libs/contact';
 import { getTransactionsFromAccount, getIotaSettings } from '../../libs/iota';
 import { getSettings } from '../../store/selectors/settings';
-import { fetchNewMessagesFromAllConversation, fetchNewMessagesFromConversation } from '../../libs/conversation';
+import { fetchNewMessagesFromAllConversation, fetchNewMessagesFromConversation, updateAllConversationParticipants } from '../../libs/conversation';
 
 const Login = props => {
   const dispatch = useDispatch();
@@ -60,6 +60,7 @@ const Login = props => {
         await getContactRequest(iotaSettings, passwordHash);
         updateContactData(iotaSettings);
         await fetchNewMessagesFromAllConversation(iotaSettings);
+        await updateAllConversationParticipants(iotaSettings);
         dispatch(setConversationAddresses());
         props.history.push(routes.MAIN);
       } catch (e) {

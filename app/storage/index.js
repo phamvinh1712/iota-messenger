@@ -4,6 +4,7 @@ import filter from 'lodash/filter';
 import includes from 'lodash/includes';
 import map from 'lodash/map';
 import size from 'lodash/size';
+import find from 'lodash/find';
 import schemas, { STORAGE_PATH } from './schema';
 import { parse, serialise } from '../libs/utils';
 
@@ -89,6 +90,10 @@ class Contact {
       assign(contact, { ...data });
     });
   }
+
+  static getDataAsArray() {
+    return map(Contact.data, contact => parse(serialise(contact)));
+  }
 }
 
 class Conversation {
@@ -167,6 +172,14 @@ class Conversation {
     return [];
   }
 
+  static getConversationName(id) {
+    const conversation = Conversation.getById(id);
+    if (conversation) {
+      return conversation.participants.map(participant => participant.username).join(',');
+    }
+    return '';
+  }
+
   static getLastMessageFromId(id) {
     const conversation = Conversation.getById(id);
     if (conversation && conversation.messages && conversation.messages.length) {
@@ -182,6 +195,14 @@ class Conversation {
     realm.write(() => {
       assign(conversation, { ...data });
     });
+  }
+
+  static getParticipantFromConversation(id, participantRoot) {
+    const conversation = Conversation.getById(id);
+    if (!conversation || !conversation.participants.length) return;
+    const contact = find(conversation.participants, ['mamRoot', participantRoot]);
+    if (contact) return contact;
+    return null;
   }
 }
 

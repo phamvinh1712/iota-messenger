@@ -2,8 +2,8 @@ import { now } from 'moment';
 import { Account, Contact } from '../storage';
 import { verifySignatureRSA, signRSA } from './crypto';
 
-export const decryptMessage = ({ message, senderRoot, createdTime, signature }) => {
-  const contact = Contact.getById(senderRoot);
+export const decryptMessage = (conversationSeed, { message, senderRoot, createdTime, signature }) => {
+  const contact = Contact.getParticipantFromConversation(conversationSeed, senderRoot);
   if (contact) {
     const { publicKey } = contact;
     if (verifySignatureRSA(message, signature, publicKey)) {

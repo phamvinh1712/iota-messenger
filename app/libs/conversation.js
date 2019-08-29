@@ -3,8 +3,11 @@ import { trytesToAscii } from '@iota/converter';
 import { randomBytes } from './crypto';
 import { MAX_SEED_LENGTH } from '../constants/iota';
 import { byteToChar } from './converter';
-import { Conversation } from '../storage';
+import { Conversation, Contact } from '../storage';
 import { decryptMessage } from './message';
+
+import { composeAPI } from '@iota/core';
+import { fetchContactInfo } from './contact';
 
 export const createConversation = iotaSettings => {
   const sideKey = randomBytes(MAX_SEED_LENGTH, 27)
@@ -54,7 +57,7 @@ export const fetchNewMessagesFromConversation = async (iotaSettings, conversatio
       result.messages.forEach(message => {
         const parsedMessage = JSON.parse(trytesToAscii(message));
         if (parsedMessage.message && parsedMessage.senderRoot && parsedMessage.createdTime && parsedMessage.signature) {
-          const messageObj = decryptMessage(parsedMessage);
+          const messageObj = decryptMessage(conversationSeed, parsedMessage);
 
           if (messageObj) {
             messageObj.index = index;
@@ -72,9 +75,45 @@ export const fetchNewMessagesFromConversation = async (iotaSettings, conversatio
   }
 };
 
-export const fetchNewMessagesFromAllConversation = iotaSettings => {
+export const fetchNewMessagesFromAllConversation = async iotaSettings => {
   const conversationSeeds = Conversation.keys;
-  conversationSeeds.forEach(key => {
-    fetchNewMessagesFromConversation(iotaSettings, key);
-  });
+  await Promise.all(
+    conversationSeeds.map(async key => {
+      await fetchNewMessagesFromConversation(iotaSettings, key);
+    })
+  );
+};
+
+export const updateAllConversationParticipants = async iotaSettings => {
+  const conversationSeeds = Conversation.keys;
+  await Promise.all(
+    conversationSeeds.map(async key => {
+      await updateConversationParticipants(iotaSettings, key);
+    })
+  );
+};
+
+export const updateConversationParticipants = async (iotaSettings, conversationSeed) => {
+  const conversation = Conversation.getById(conversationSeed);
+  let mamState = MAM.init(iotaSettings, conversation.seed);
+  mamState = MAM.changeMode(mamState, 'private');
+  const root = MAM.getRoot(mamState);
+  const result = await MAM.fetch(root, 'private');
+  const participantRoots = result.messages;
+
+  await Promise.all(
+    participantRoots.map(async mamRoot => {
+      const contact = Contact.getById(root);
+      if (!contact) {
+        const contactInfo = await fetchContactInfo(iotaSettings, mamRoot);
+        if (contactInfo && contactInfo.username && contactInfo.publicKey && contactInfo.address) {
+          Contact.add({
+            username: contactInfo.username,
+            publicKey: contactInfo.publicKey,
+            mamRoot
+          });
+        }
+      }
+    })
+  );
 };
