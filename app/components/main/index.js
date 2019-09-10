@@ -6,7 +6,7 @@ import Messenger from './Messenger';
 import { getSeed } from '../../libs/crypto';
 import { getPasswordHash } from '../../store/selectors/main';
 import { getIotaSettings, getTransactionsFromAccount, getZmqDomain } from '../../libs/iota';
-import { fetchNewMessagesFromConversation } from '../../libs/conversation';
+import { fetchNewChannelFromConversation, fetchNewMessagesFromConversation } from '../../libs/conversation';
 import { getSettings } from '../../store/selectors/settings';
 import { getContactRequest } from '../../libs/contact';
 import { Account, Conversation } from '../../storage';
@@ -19,20 +19,24 @@ const Main = () => {
   const dispatch = useDispatch();
   const account = Account.data;
   let conversationAddresses;
+  let channelAddresses;
 
   function updateConversationAddress() {
     conversationAddresses = Conversation.getAddress();
-    console.log(conversationAddresses);
+    channelAddresses = Conversation.getChannelAddress();
+    console.log('conversationAddresses', conversationAddresses);
+    console.log('channelAddresses', channelAddresses);
   }
 
   useEffect(() => {
     dispatch(setSelfMamRoot(account.mamRoot));
     conversationAddresses = Conversation.getAddress();
+    channelAddresses = Conversation.getChannelAddress();
     console.log(conversationAddresses);
     const socket = zmq.socket('sub');
     getSeed(passwordHash, 'string')
       .then(seed => {
-        const zmqDomain = getZmqDomain(settings.nodeDomain);
+        const zmqDomain = getZmqDomain(settings.isDevnet);
         socket.connect(zmqDomain);
         socket.subscribe('tx');
         socket.on('message', async msg => {
@@ -43,7 +47,7 @@ const Main = () => {
             if ((!data[7] && !data[6]) || data[7] === data[6]) {
               try {
                 await getTransactionsFromAccount(iotaSettings, seed);
-                await getContactRequest(iotaSettings, passwordHash);
+                await getContactRequest(iotaSettings);
                 conversationAddresses = Conversation.getAddress();
               } catch (e) {
                 console.log(e);
@@ -52,8 +56,14 @@ const Main = () => {
           }
           const conversationAddress = find(conversationAddresses, ['address', data[2]]);
           if (conversationAddress && ((!data[7] && !data[6]) || data[7] === data[6])) {
-            await fetchNewMessagesFromConversation(iotaSettings, conversationAddress.seed);
+            await fetchNewChannelFromConversation(iotaSettings, conversationAddress.seed);
             conversationAddresses = Conversation.getAddress();
+            console.log(conversationAddresses);
+          }
+          const channelAddress = find(channelAddresses, ['address', data[2]]);
+          if (channelAddress && ((!data[7] && !data[6]) || data[7] === data[6])) {
+            await fetchNewMessagesFromConversation(iotaSettings, conversationAddress.seed);
+            channelAddresses = Conversation.getChannelAddress();
             console.log(conversationAddresses);
           }
         });

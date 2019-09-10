@@ -1,15 +1,18 @@
-import MAM from '@iota/mam';
-import { asciiToTrytes } from '@iota/converter';
-import { DEFAULT_DEPTH, DEFAULT_MIN_WEIGHT_MAGNITUDE } from '../constants/iota';
-import uuidv1 from 'uuid/v1';
-import { Conversation, MamQueue } from '../storage';
+import { Mam as MAM } from '@iota/client-load-balancer';
+import { asciiToTrytes, trytes, trits } from '@iota/converter';
+import { DEFAULT_DEPTH, DEFAULT_MIN_WEIGHT_MAGNITUDE, MAX_SEED_LENGTH } from '../constants/iota';
+import { randomBytes } from './crypto';
+import { byteToChar } from './converter';
+import Curl from '@iota/curl';
 
-export const getMamRoot = (iotaSettings, seed) => {
+export const getMamRoot = (iotaSettings, seed, count = 2) => {
   const mamState = MAM.init(iotaSettings, seed);
+  mamState.channel.count = count;
+  mamState.channel.next_count = count;
   return MAM.getRoot(mamState);
 };
 
-export const updateMamChannel = async (iotaSettings, data, seed, mode, sideKey, index = 0) => {
+export const updateMamChannel = async (iotaSettings, data, seed, mode, sideKey, start = 0, count = 2, index = 0) => {
   if (mode === 'restricted' && !sideKey) {
     throw new Error('Restricted mode requires side key');
   }
@@ -19,8 +22,10 @@ export const updateMamChannel = async (iotaSettings, data, seed, mode, sideKey, 
   } else {
     mamState = MAM.changeMode(mamState, mode);
   }
-
-  if (index) mamState.channel.start = index - 1;
+  mamState.channel.count = count;
+  mamState.channel.next_count = count;
+  mamState.channel.index = index;
+  if (start) mamState.channel.start = start - 1;
 
   const root = MAM.getRoot(mamState);
   let result;
@@ -52,65 +57,31 @@ export const updateMamChannel = async (iotaSettings, data, seed, mode, sideKey, 
   return root;
 };
 
-export const addMamMessageToQueue = (data, seed, mode, sideKey, isChat) => {
-  const trytes = asciiToTrytes(JSON.stringify(data));
-  const uuid = uuidv1();
-  const mamMessage = {
-    trytes,
-    uuid,
-    seed,
-    mode
+export const createChannel = iotaSettings => {
+  const conversationSideKey = randomBytes(MAX_SEED_LENGTH, 27)
+    .map(byteToChar)
+    .join('');
+
+  let mamState = MAM.init(iotaSettings);
+  mamState = MAM.changeMode(mamState, 'restricted', conversationSideKey);
+  const mamRoot = MAM.getRoot(mamState);
+  return {
+    sideKey: conversationSideKey,
+    mamRoot,
+    seed: mamState.seed,
+    nextAddress: getAddress(mamRoot)
   };
-  if (sideKey) {
-    mamMessage.sideKey = sideKey;
-  }
-  if (isChat) {
-    mamMessage.isChat = isChat;
-  }
-
-  MamQueue.add(mamMessage);
 };
 
-export const attachMamMessage = iotaSettings => {
-  const messages = MamQueue.getDataAsArray();
-  if (messages.length) {
-    messages.forEach(async message => {
-      let mamState = MAM.init(iotaSettings, message.seed);
-      if (message.mode === 'restricted' && message.sideKey) {
-        mamState = MAM.changeMode(mamState, message.mode, message.sideKey);
-      } else {
-        mamState = MAM.changeMode(mamState, message.mode);
-      }
-
-      if (message.isChat) {
-        const conversation = Conversation.getById(message.seed);
-        if (conversation.messages && conversation.messages.length) {
-          mamState.channel.start = conversation.messages.length - 1;
-        }
-      }
-      const root = MAM.getRoot(mamState);
-      let result;
-      try {
-        if (message.mode === 'restricted' && message.sideKey) {
-          result = await MAM.fetch(root, message.mode, message.sideKey);
-        } else {
-          result = await MAM.fetch(root, message.mode);
-        }
-      } catch (e) {
-        throw new Error(e);
-      }
-
-      if (result && result.messages) {
-        mamState.channel.start += result.messages.length;
-      }
-      const mamMessage = MAM.create(mamState, message.trytes);
-      MAM.attach(mamMessage.payload, mamMessage.address, DEFAULT_DEPTH, DEFAULT_MIN_WEIGHT_MAGNITUDE)
-        .then(results => {
-          MamQueue.delete(message.uuid);
-        })
-        .catch(error => {
-          console.log(error);
-        });
-    });
-  }
+export const getAddress = root => {
+  return trytes(hash(81, trits(root.slice())));
 };
+
+function hash(rounds, ...keys) {
+  const curl = new Curl(rounds);
+  const key = new Int8Array(Curl.HASH_LENGTH);
+  curl.initialize();
+  keys.map(k => curl.absorb(k, 0, Curl.HASH_LENGTH));
+  curl.squeeze(key, 0, Curl.HASH_LENGTH);
+  return key;
+}

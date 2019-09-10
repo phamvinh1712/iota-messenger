@@ -46,17 +46,17 @@ export default class MenuBuilder {
 
   buildDarwinTemplate() {
     const subMenuAbout = {
-      label: 'Electron',
+      label: 'IOTA-Messenger',
       submenu: [
         {
-          label: 'About ElectronReact',
+          label: 'About IOTA-Messenger',
           selector: 'orderFrontStandardAboutPanel:'
         },
         { type: 'separator' },
         { label: 'Settings', click: () => this.navigate(routes.SETTINGS) },
         { type: 'separator' },
         {
-          label: 'Hide ElectronReact',
+          label: 'Hide IOTA-Messenger',
           accelerator: 'Command+H',
           selector: 'hide:'
         },

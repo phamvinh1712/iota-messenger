@@ -18,7 +18,7 @@ import { setAccountInfo } from '../../store/actions/account';
 import { getContactRequest, updateContactData } from '../../libs/contact';
 import { getTransactionsFromAccount, getIotaSettings } from '../../libs/iota';
 import { getSettings } from '../../store/selectors/settings';
-import { fetchNewMessagesFromAllConversation, fetchNewMessagesFromConversation, updateAllConversationParticipants } from '../../libs/conversation';
+import { fetchNewChannelFromAllConversation, fetchNewMessagesFromAllConversation } from '../../libs/conversation';
 
 const Login = props => {
   const dispatch = useDispatch();
@@ -56,11 +56,13 @@ const Login = props => {
       const seed = await getSeed(passwordHash, 'string');
 
       try {
-        await getTransactionsFromAccount(iotaSettings, seed);
-        await getContactRequest(iotaSettings, passwordHash);
+        await Promise.all([
+          getTransactionsFromAccount(iotaSettings, seed),
+          getContactRequest(iotaSettings),
+          fetchNewMessagesFromAllConversation(iotaSettings),
+          fetchNewChannelFromAllConversation(iotaSettings)
+        ]);
         updateContactData(iotaSettings);
-        await fetchNewMessagesFromAllConversation(iotaSettings);
-        await updateAllConversationParticipants(iotaSettings);
         dispatch(setConversationAddresses());
         props.history.push(routes.MAIN);
       } catch (e) {

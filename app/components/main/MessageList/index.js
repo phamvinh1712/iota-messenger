@@ -84,7 +84,7 @@ const MessageList = props => {
     if (newContact && newContact.mamRoot) {
       closeAddDialog();
       dispatch(startLoadingMessageList());
-      sendConversationRequest(iotaSettings, passwordHash, newContact.mamRoot)
+      sendConversationRequest(iotaSettings, passwordHash, newContact.mamRoot, false)
         .then(bool => {
           dispatch(finishLoadingMessageList());
           if (bool) {

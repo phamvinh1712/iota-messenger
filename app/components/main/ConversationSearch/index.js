@@ -5,11 +5,7 @@ export default class ConversationSearch extends Component {
   render() {
     return (
       <div className={style.conversationSearch}>
-        <input
-          type="search"
-          className={style.conversationSearchInput}
-          placeholder="Search Messages"
-        />
+        <input type="search" className={style.conversationSearchInput} placeholder="Search Messages" />
       </div>
     );
   }

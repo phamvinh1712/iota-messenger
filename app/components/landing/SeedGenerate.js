@@ -23,6 +23,8 @@ import styles from './landingStyle';
 import routes from '../../constants/routes';
 import PasswordInput from '../input/PasswordInput';
 import { notify } from '../../store/actions/ui';
+import Typography from '@material-ui/core/Typography';
+import Paper from '@material-ui/core/Paper';
 
 const SeedGenerate = props => {
   const dispatch = useDispatch();
@@ -97,6 +99,12 @@ const SeedGenerate = props => {
   return (
     <Container component="div" maxWidth="xl">
       <div className={classes.paper}>
+        <Paper>
+          <Typography component="p">
+            Please save your seed carefully. We will ask you to confirm your seed in the next step.
+            You can save your seed in an encrypted file by clicking the save button.
+          </Typography>
+        </Paper>
         <h1>Generated seed</h1>
         <div>
           {seed.map((byte, index) => {

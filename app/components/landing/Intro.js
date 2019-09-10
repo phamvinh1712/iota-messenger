@@ -21,7 +21,7 @@ const Intro = props => {
           </Typography>
           <Typography component="p">
             Your IOTA seed is the master key to your application. It is 81 characters long, using only letters A-Z or
-            the number 9
+            the number 9. If you already used the application before, you can use your seed to retrieve all of your data.
           </Typography>
         </Paper>
         <p />

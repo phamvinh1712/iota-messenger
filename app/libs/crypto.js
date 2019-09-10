@@ -67,7 +67,7 @@ export const encrypt = async (contentPlain, hash) => {
   const iv = crypto.getRandomValues(new Uint8Array(12));
   const ivHex = iv.toString();
 
-  const algorithm = { name: 'AES-GCM', iv: iv };
+  const algorithm = { name: 'AES-GCM', iv };
 
   const key = await crypto.subtle.importKey('raw', hash, algorithm, false, ['encrypt']);
 
@@ -222,25 +222,11 @@ export const addAccount = async (iotaSettings, username, seed, passwordHash) => 
   const sideKey = randomBytes(MAX_SEED_LENGTH, 27)
     .map(byteToChar)
     .join('');
-  try {
-    await Electron.setKeychain(`${MAIN_ACCOUNT}-private-key`, privateKey);
-    await Electron.setKeychain(`${MAIN_ACCOUNT}-side-key`, sideKey);
-  } catch (e) {
-    console.log(e);
-  }
 
-  let accountData = {
-    username,
-    publicKey,
-    address
-  };
+  let accountData = { username, publicKey, address };
   try {
     const mamRoot = await updateMamChannel(iotaSettings, accountData, stringSeed, 'private');
-    accountData = {
-      ...accountData,
-      sideKey,
-      mamRoot
-    };
+    accountData = { ...accountData, sideKey, mamRoot, privateKey };
     Account.update(accountData);
     Contact.add({ username, publicKey, mamRoot });
     return true;
@@ -311,34 +297,34 @@ export const updatePassword = async (hash, hashNew) => {
 
 export const generateKeyPair = passwordHash => {
   const rsa = new NodeRSA({ b: 512 });
-  const publicKey = asciiToTrytes(rsa.exportKey('pkcs8-public-pem'));
-  const privateKey = asciiToTrytes(rsa.exportKey('pkcs8-private-pem'));
+  const publicKey = asciiToTrytes(rsa.exportKey('public'));
+  const privateKey = asciiToTrytes(rsa.exportKey('private'));
   return { publicKey, privateKey };
 };
 
 export const encryptRSA = (message, publicKey) => {
   const rsa = new NodeRSA();
-  rsa.importKey(trytesToAscii(publicKey), `pkcs8-public-pem`);
+  rsa.importKey(trytesToAscii(publicKey), `public`);
 
   return rsa.encrypt(message);
 };
 
 export const decryptRSA = (cipherMessage, privateKey) => {
   const rsa = new NodeRSA();
-  rsa.importKey(trytesToAscii(privateKey), `pkcs8-private-pem`);
+  rsa.importKey(trytesToAscii(privateKey), `private`);
   return rsa.decrypt(Buffer.from(cipherMessage.data)).toString('ascii');
 };
 
 export const signRSA = (message, privateKey) => {
   const rsa = new NodeRSA();
-  rsa.importKey(trytesToAscii(privateKey), `pkcs8-private-pem`);
+  rsa.importKey(trytesToAscii(privateKey), 'private');
   return rsa.sign(message);
 };
 
-export const verifySignatureRSA = (message, signature, publicKey) => {
+export const verifyRSA = (message, publicKey, signature) => {
   const rsa = new NodeRSA();
-  rsa.importKey(trytesToAscii(publicKey), 'pkcs8-public-pem');
-  return rsa.verify(message, Buffer.from(signature.data));
+  rsa.importKey(trytesToAscii(publicKey), 'public');
+  return rsa.verify(Buffer.from(message.data), signature);
 };
 
 export const getSeed = async (passwordHash, format) => {

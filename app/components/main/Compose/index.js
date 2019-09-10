@@ -1,20 +1,17 @@
 import React, { useEffect, useState } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import style from './Compose.css';
-import { createMessage } from '../../../libs/message';
-import { getKey } from '../../../libs/crypto';
-import { getPasswordHash } from '../../../store/selectors/main';
 import { updateMamChannel } from '../../../libs/mam';
 import { finishLoadingMessageList, startLoadingMessageList } from '../../../store/actions/ui';
 import { Conversation } from '../../../storage';
 import { getSettings } from '../../../store/selectors/settings';
 import { getIotaSettings } from '../../../libs/iota';
+import { now } from 'moment';
 
 const Compose = props => {
   const [message, setMessage] = useState('');
   const { conversation } = props;
-  const passwordHash = useSelector(getPasswordHash);
-  const [conversationData, setConversationData] = useState(null);
+  const [channelData, setChannelData] = useState(null);
   const dispatch = useDispatch();
   const iotaSettings = getIotaSettings(useSelector(getSettings));
 
@@ -35,24 +32,23 @@ const Compose = props => {
 
   useEffect(() => {
     if (conversation) {
-      const conversationObj = Conversation.getById(conversation);
-      if (conversationObj) {
-        setConversationData({
-          sideKey: conversationObj.sideKey,
-          seed: conversationObj.seed,
-          mamRoot: conversationObj.mamRoot,
-          messagesLength: conversationObj.messages.length
+      const channel = Conversation.getSelfChannelFromId(conversation);
+      if (channel) {
+        setChannelData({
+          sideKey: channel.sideKey,
+          seed: channel.seed,
+          mamRoot: channel.mamRoot,
+          messagesLength: channel.messages.length
         });
       }
     }
   });
 
   const submitMessage = async () => {
-    if (!message || !conversationData) return;
+    if (!message || !channelData) return;
     try {
-      const privateKey = await getKey(passwordHash, 'private');
-      const messageObj = createMessage(message, privateKey);
-      const { seed, sideKey, messagesLength } = conversationData;
+      const messageObj = { content: message, createdTime: now() };
+      const { seed, sideKey, messagesLength } = channelData;
       await updateMamChannel(iotaSettings, messageObj, seed, 'restricted', sideKey, messagesLength);
       return true;
     } catch (e) {

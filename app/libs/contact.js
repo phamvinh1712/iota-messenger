@@ -5,12 +5,13 @@ import sortBy from 'lodash/sortBy';
 import trimEnd from 'lodash/trimEnd';
 import { sendTransfer } from './iota';
 import { Account, Contact, Conversation } from '../storage';
-import { createConversation, saveConversation, updateConversationParticipants } from './conversation';
-import { decryptRSA, encryptRSA, getKey, getSeed } from './crypto';
-import { getMamRoot, updateMamChannel } from './mam';
-import { composeAPI } from '@iota/core';
+import { decryptRSA, encryptRSA, getSeed, signRSA, verifyRSA } from './crypto';
+import { getMamRoot, updateMamChannel, createChannel } from './mam';
 
 export const fetchContactInfo = async (iotaSettings, mamRoot) => {
+  const contact = Contact.getById(mamRoot);
+  if (contact) return contact;
+
   const mamState = MAM.init(iotaSettings);
   try {
     const result = await MAM.fetch(mamRoot, 'private');
@@ -20,7 +21,13 @@ export const fetchContactInfo = async (iotaSettings, mamRoot) => {
       if (!contact || !contact.username || !contact.publicKey || !contact.address) {
         throw new Error('Invalid contact');
       }
-      return contact;
+      Contact.add({
+        username: contact.username,
+        publicKey: contact.publicKey,
+        address: contact.address,
+        mamRoot
+      });
+      return Contact.getById(mamRoot);
     }
     return null;
   } catch (e) {
@@ -28,7 +35,7 @@ export const fetchContactInfo = async (iotaSettings, mamRoot) => {
   }
 };
 
-export const sendConversationRequest = async (iotaSettings, passwordHash, mamRoot) => {
+export const sendConversationRequest = async (iotaSettings, passwordHash, mamRoot, join = true) => {
   const contactInfo = await fetchContactInfo(iotaSettings, mamRoot);
   if (contactInfo && contactInfo.username && contactInfo.publicKey && contactInfo.address) {
     try {
@@ -37,7 +44,9 @@ export const sendConversationRequest = async (iotaSettings, passwordHash, mamRoo
         publicKey: contactInfo.publicKey,
         mamRoot
       });
-      const conversation = createConversation(iotaSettings);
+
+      const conversation = createChannel(iotaSettings);
+      Conversation.add(conversation);
 
       const requestMessage = {};
       Object.keys(conversation).forEach(key => {
@@ -47,7 +56,6 @@ export const sendConversationRequest = async (iotaSettings, passwordHash, mamRoo
       });
 
       const seed = await getSeed(passwordHash, 'string');
-      const sideKey = await getKey(passwordHash, 'side');
 
       requestMessage.senderRoot = encryptRSA(getMamRoot(iotaSettings, seed), contactInfo.publicKey);
 
@@ -59,10 +67,8 @@ export const sendConversationRequest = async (iotaSettings, passwordHash, mamRoo
         }
       ];
 
-      await updateMamChannel(iotaSettings, Account.data.mamRoot, conversation.seed, 'private');
       await sendTransfer(iotaSettings, seed, transfer);
-      const newConversation = saveConversation(conversation, [{ mamRoot }]);
-      await updateMamChannel(iotaSettings, newConversation, seed, 'restricted', sideKey);
+      if (join) await joinConversation(iotaSettings, seed, conversation.seed);
     } catch (e) {
       console.log(e);
       throw new Error(e);
@@ -70,6 +76,31 @@ export const sendConversationRequest = async (iotaSettings, passwordHash, mamRoo
     return true;
   }
   return false;
+};
+
+export const joinConversation = async (iotaSettings, seed, conversationSeed) => {
+  const conversation = Conversation.getById(conversationSeed);
+  const selfChannel = createChannel();
+  Conversation.addChannel(conversation.seed, { ...selfChannel, self: true });
+  const { sideKey, mamRoot, privateKey } = Account.data;
+
+  const selfPayload = {
+    mamRoot: selfChannel.mamRoot,
+    sideKey: selfChannel.sideKey,
+    ownerRoot: mamRoot,
+    signature: signRSA(selfChannel.mamRoot, privateKey)
+  };
+  Conversation.addChannel(conversation.seed, { ...selfChannel, self: true });
+  const conversationInfo = {
+    conversationSeed: conversation.mamRoot,
+    conversationSideKey: conversation.sideKey,
+    channelSeed: selfChannel.seed,
+    channelSideKey: selfChannel.sideKey
+  };
+  await Promise.all([
+    updateMamChannel(iotaSettings, selfPayload, conversation.seed, 'restricted', conversation.sideKey),
+    updateMamChannel(iotaSettings, conversationInfo, seed, 'restricted', sideKey)
+  ]);
 };
 
 export const decryptContactRequest = async (iotaSettings, messageData, privateKey) => {
@@ -94,12 +125,12 @@ export const decryptContactRequest = async (iotaSettings, messageData, privateKe
 };
 
 export const getContactRequest = async (iotaSettings, passwordHash) => {
-  const privateKey = await getKey(passwordHash, 'private');
+  const { privateKey } = Account.data;
   const conversations = [];
   const transactions = Account.data.transactions.filter(
     transaction => transaction.address === Account.data.address.substring(0, 81)
   );
-
+  const seed = await getSeed(passwordHash, 'string');
   const bundles = groupBy(transactions, 'bundle');
 
   await Promise.all(
@@ -134,20 +165,35 @@ export const getContactRequest = async (iotaSettings, passwordHash) => {
       }
       const checkConversation = Conversation.getById(conversation.seed);
       if (!checkConversation) {
-        let mamState = MAM.init(iotaSettings, conversation.seed);
-        mamState = MAM.changeMode(mamState, 'restricted', conversation.sideKey);
-        const message = MAM.create(mamState, '');
-
-        updateMamChannel(iotaSettings, Account.data.mamRoot, conversation.seed, 'private');
-
         Conversation.add({
           mamRoot: conversation.mamRoot,
           sideKey: conversation.sideKey,
-          seed: conversation.seed,
-          currentAddress: message.address
+          seed: conversation.seed
         });
-        Conversation.addParticipant(conversation.seed, conversation.senderRoot);
-        await updateConversationParticipants(iotaSettings, conversation.seed);
+        const result = await MAM.fetch(conversation.mamRoot, 'restricted', conversation.sideKey);
+        if (result && result.messages) {
+          await Promise.all(
+            result.messages.map(async message => {
+              const parsedMessage = JSON.parse(trytesToAscii(message));
+              if (
+                parsedMessage.mamRoot &&
+                parsedMessage.sideKey &&
+                parsedMessage.ownerRoot &&
+                parsedMessage.signature
+              ) {
+                const { mamRoot, sideKey, ownerRoot, signature } = parsedMessage;
+                const contact = await fetchContactInfo(iotaSettings, ownerRoot);
+
+                if (contact) {
+                  if (verifyRSA(mamRoot, contact.publicKey, signature)) {
+                    Conversation.addChannel(conversation.seed, { owner: contact, mamRoot, sideKey });
+                  }
+                }
+              }
+            })
+          );
+          await joinConversation(iotaSettings, seed, conversation.seed);
+        }
       }
     })
   );

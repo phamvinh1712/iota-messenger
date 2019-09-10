@@ -26,19 +26,16 @@ export const ContactSchema = {
     mamRoot: 'string',
     publicKey: 'string',
     username: 'string',
-    avatar: 'string?'
+    address: 'string'
   }
 };
 
 export const MessageSchema = {
   name: 'Message',
   properties: {
-    sender: 'Contact',
     content: 'string',
     createdTime: 'date',
-    messageRoot: 'string?',
-    index: 'int',
-    image: 'string?'
+    messageRoot: 'string?'
   }
 };
 
@@ -46,22 +43,28 @@ export const ConversationSchema = {
   name: 'Conversation',
   primaryKey: 'seed',
   properties: {
-    participants: { type: 'Contact[]', default: [] },
-    messages: { type: 'Message[]', default: [] },
+    channels: { type: 'Channel[]', default: [] },
     mamRoot: 'string',
     sideKey: 'string',
     seed: 'string',
-    currentAddress: 'string?'
+    nextAddress: 'string?'
   }
 };
 
-// export const ConversationRequestSchema = {
-//   name: 'ConversationRequest',
-//   properties: {
-//     sender: 'Contact',
-//     conversation: 'Conversation'
-//   }
-// };
+export const ChannelSchema = {
+  name: 'Channel',
+  primaryKey: 'mamRoot',
+  properties: {
+    owner: 'Contact?',
+    messages: { type: 'Message[]', default: [] },
+    sideKey: { type: 'string', default: '' },
+    seed: 'string?',
+    mamRoot: { type: 'string', default: '' },
+    nextAddress: 'string?',
+    self: { type: 'bool', default: false },
+    waiting: { type: 'bool', default: false }
+  }
+};
 
 export const TransactionSchema = {
   name: 'Transaction',
@@ -96,20 +99,6 @@ export const NodeSchema = {
   }
 };
 
-export const MamQueueSchema = {
-  name: 'MamQueue',
-  primaryKey: 'uuid',
-  properties: {
-    uuid: 'string',
-    trytes: 'string',
-    seed: 'string',
-    mode: 'string',
-    sideKey: { type: 'string', default: '' },
-    isChat: { type: 'bool', default: false },
-    addedTime: 'date'
-  }
-};
-
 export default [
   AccountSchema,
   ContactSchema,
@@ -117,5 +106,5 @@ export default [
   ConversationSchema,
   TransactionSchema,
   NodeSchema,
-  MamQueueSchema
+  ChannelSchema
 ];

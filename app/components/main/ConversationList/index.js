@@ -9,10 +9,6 @@ import Button from '@material-ui/core/Button';
 import Dialog from '@material-ui/core/Dialog';
 import CircularProgress from '@material-ui/core/CircularProgress';
 import CheckIcon from '@material-ui/icons/Check';
-import ListItem from '@material-ui/core/ListItem';
-import ListItemText from '@material-ui/core/ListItemText';
-import { FixedSizeList } from 'react-window';
-import ConversationSearch from '../ConversationSearch';
 import Toolbar from '../Toolbar';
 import ToolbarButton from '../ToolbarButton';
 import style from './ConversationList.css';
@@ -39,7 +35,6 @@ const ConversationList = ({ updateConversationAddress }) => {
   const accountData = Account.data;
   const [username, setUsername] = useState(accountData.username);
   const [isSavingUsername, setIsSavingUsername] = useState(false);
-  const [contactList, setContactList] = useState([]);
 
   const closeAddDialog = () => {
     setOpenAddDialog(false);
@@ -122,7 +117,6 @@ const ConversationList = ({ updateConversationAddress }) => {
 
   useEffect(() => {
     const conversationList = Conversation.getDataAsArray();
-    setContactList(Contact.getDataAsArray());
     setConversations(
       conversationList.map(conversation => {
         let lastMessage = '';
@@ -131,7 +125,7 @@ const ConversationList = ({ updateConversationAddress }) => {
           lastMessage = conversation.messages[length - 1].content;
         }
         return {
-          conversationName: conversation.participants.map(participant => participant.username).join(','),
+          conversationName: conversation.channels.map(channel => channel.owner.username).join(','),
           lastMessage,
           seed: conversation.seed
         };
@@ -149,7 +143,6 @@ const ConversationList = ({ updateConversationAddress }) => {
             <ToolbarButton key="add" icon="ion-ios-add-circle-outline" onClick={() => setOpenAddDialog(true)} />
           ]}
         />
-        <ConversationSearch />
         {conversations.map(conversation => (
           <ConversationListItem key={conversation.seed} data={conversation} />
         ))}
@@ -211,13 +204,6 @@ const ConversationList = ({ updateConversationAddress }) => {
             onChange={e => setUsername(e.target.value)}
             fullWidth
           />
-          <FixedSizeList height={200} width={360} itemSize={46} itemCount={200}>
-            {contactList.map(contact => (
-              <ListItem>
-                <ListItemText primary={contact.username} secondary={contact.mamRoot} />
-              </ListItem>
-            ))}
-          </FixedSizeList>
         </DialogContent>
 
         <DialogActions>

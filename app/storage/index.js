@@ -5,6 +5,7 @@ import includes from 'lodash/includes';
 import map from 'lodash/map';
 import size from 'lodash/size';
 import find from 'lodash/find';
+import orderBy from 'lodash/orderBy';
 import schemas, { STORAGE_PATH } from './schema';
 import { parse, serialise } from '../libs/utils';
 
@@ -111,8 +112,20 @@ class Conversation {
   static getAddress() {
     const conversations = realm.objects('Conversation');
     if (conversations.length)
-      return conversations.map(conversation => ({ seed: conversation.seed, address: conversation.currentAddress }));
+      return conversations.map(conversation => ({ seed: conversation.seed, address: conversation.nextAddress }));
     return [];
+  }
+
+  static getChannelAddress() {
+    const conversations = realm.objects('Conversation');
+    if (conversations.length) {
+      const addresses = [];
+      conversations.forEach(conversation => {
+        conversation.channels.forEach(channel => {
+          addresses.push({ seed: conversation.seed, address: channel.nextAddress });
+        });
+      });
+    }
   }
 
   static getById(id) {
@@ -132,34 +145,74 @@ class Conversation {
     }
   }
 
-  static addParticipant(id, contactId) {
+  static addChannel(id, channelData) {
     const conversation = Conversation.getById(id);
-    const contact = Contact.getById(contactId);
-    if (!conversation || !contact) return;
+    if (!conversation) return;
     let isExist = false;
-    conversation.participants.forEach(participant => {
-      if (contact.mamRoot === participant.mamRoot) {
+    conversation.channels.forEach(channel => {
+      if (channel.mamRoot === channelData.mamRoot) {
         isExist = true;
       }
     });
     if (isExist) return;
-    realm.write(() => conversation.participants.push(contact));
+    realm.write(() => conversation.channels.push(channelData));
   }
 
-  static addMessage(id, messageData) {
+  static addMessage(id, channelId, messageData) {
     const conversation = Conversation.getById(id);
+    if (!conversation) return;
+    let channel = null;
+    conversation.channels.forEach(c => {
+      if (c.mamRoot === channelId) {
+        channel = c;
+      }
+    });
     const { index } = messageData;
-    if (conversation && index >= conversation.messages.length) {
-      realm.write(() => conversation.messages.push(messageData));
+    if (channel && index >= channel.messages.length) {
+      realm.write(() => channel.messages.push(messageData));
     }
+  }
+
+  static updateConversationAddress(id, address) {
+    const conversation = Conversation.getById(id);
+    if (!conversation) return;
+    realm.write(() => {
+      conversation.nextAddress = address;
+    });
+  }
+
+  static updateChannelAddress(id, channelId, address) {
+    const conversation = Conversation.getById(id);
+    if (!conversation) return;
+    let channel = null;
+    conversation.channels.forEach(c => {
+      if (c.mamRoot === channelId) {
+        channel = c;
+      }
+    });
+    if (channel)
+      realm.write(() => {
+        channel.nextAddress = address;
+      });
+  }
+
+  static getSelfChannelFromId(id) {
+    const conversation = Conversation.getById(id);
+    if (!conversation) return;
+    let channel = null;
+    conversation.channels.forEach(c => {
+      if (c.self) {
+        channel = c;
+      }
+    });
+    return channel;
   }
 
   static getDataAsArray() {
     const conversations = Conversation.data;
     return map(conversations, conversation =>
       assign({}, conversation, {
-        participants: map(conversation.participants, participant => parse(serialise(participant))),
-        messages: map(conversation.messages, message => parse(serialise(message)))
+        channels: map(conversation.channels, channel => parse(serialise(channel)))
       })
     );
   }
@@ -167,7 +220,13 @@ class Conversation {
   static getMessagesFromId(id) {
     const conversation = Conversation.getById(id);
     if (conversation) {
-      return conversation.messages.map(message => parse(serialise(message)));
+      const messages = [];
+      conversation.channels.forEach(channel => {
+        channel.messages.forEach(message => {
+          messages.push({ content: message.content, createdTime: message.createdTime, sender: channel.owner });
+        });
+      });
+      return orderBy(messages, ['createdTime'], ['asc']);
     }
     return [];
   }
@@ -175,16 +234,16 @@ class Conversation {
   static getConversationName(id) {
     const conversation = Conversation.getById(id);
     if (conversation) {
-      return conversation.participants.map(participant => participant.username).join(',');
+      return conversation.channels.map(channel => channel.owner.username).join(',');
     }
     return '';
   }
 
   static getLastMessageFromId(id) {
-    const conversation = Conversation.getById(id);
-    if (conversation && conversation.messages && conversation.messages.length) {
-      const { length } = conversation.messages;
-      return conversation.messages[length - 1];
+    const messages = Conversation.getLastMessageFromId(id);
+    if (messages.length) {
+      const { length } = messages;
+      return messages[length - 1];
     }
     return null;
   }
@@ -199,8 +258,8 @@ class Conversation {
 
   static getParticipantFromConversation(id, participantRoot) {
     const conversation = Conversation.getById(id);
-    if (!conversation || !conversation.participants.length) return;
-    const contact = find(conversation.participants, ['mamRoot', participantRoot]);
+    if (!conversation || !conversation.channels.length) return;
+    const contact = find(conversation.channels.filter(channel => !channel.self), ['owner.mamRoot', participantRoot]);
     if (contact) return contact;
     return null;
   }
@@ -251,32 +310,6 @@ class Node {
   }
 }
 
-class MamQueue {
-  static getById(id) {
-    return realm.objectForPrimaryKey('MamQueue', id);
-  }
-
-  static get data() {
-    return realm.objects('MamQueue').sorted('addedTime');
-  }
-
-  static add(data) {
-    realm.write(() => {
-      realm.create('MamQueue', data);
-    });
-  }
-
-  static getDataAsArray() {
-    return map(MamQueue.data, mam => parse(serialise(mam)));
-  }
-
-  static delete(uuid) {
-    const mam = MamQueue.getById(uuid);
-
-    realm.write(() => realm.delete(mam));
-  }
-}
-
 const purge = () =>
   new Promise((resolve, reject) => {
     try {
@@ -303,4 +336,4 @@ const initialiseStorage = getEncryptionKeyPromise => {
 };
 const resetStorage = getEncryptionKeyPromise => purge().then(() => initialiseStorage(getEncryptionKeyPromise));
 
-export { MamQueue, Node, Account, Contact, Conversation, initialiseStorage, realm, resetStorage };
+export { Node, Account, Contact, Conversation, initialiseStorage, realm, resetStorage };
