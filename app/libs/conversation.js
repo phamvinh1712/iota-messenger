@@ -1,4 +1,4 @@
-import MAM from '@iota/mam';
+import { Mam as MAM } from '@iota/client-load-balancer';
 import { trytesToAscii } from '@iota/converter';
 import { Conversation } from '../storage';
 import { getAddress } from './mam';

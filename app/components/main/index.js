@@ -47,7 +47,7 @@ const Main = () => {
             if ((!data[7] && !data[6]) || data[7] === data[6]) {
               try {
                 await getTransactionsFromAccount(iotaSettings, seed);
-                await getContactRequest(iotaSettings);
+                await getContactRequest(iotaSettings,seed);
                 conversationAddresses = Conversation.getAddress();
               } catch (e) {
                 console.log(e);

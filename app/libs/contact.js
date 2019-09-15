@@ -1,4 +1,4 @@
-import MAM from '@iota/mam';
+import { Mam as MAM } from '@iota/client-load-balancer';
 import { asciiToTrytes, trytesToAscii } from '@iota/converter';
 import groupBy from 'lodash/groupBy';
 import sortBy from 'lodash/sortBy';
@@ -12,8 +12,8 @@ export const fetchContactInfo = async (iotaSettings, mamRoot) => {
   const contact = Contact.getById(mamRoot);
   if (contact) return contact;
 
-  const mamState = MAM.init(iotaSettings);
   try {
+    MAM.init(iotaSettings);
     const result = await MAM.fetch(mamRoot, 'private');
     if (result && result.messages && result.messages.length) {
       const contact = JSON.parse(trytesToAscii(result.messages[result.messages.length - 1]));
@@ -39,12 +39,6 @@ export const sendConversationRequest = async (iotaSettings, passwordHash, mamRoo
   const contactInfo = await fetchContactInfo(iotaSettings, mamRoot);
   if (contactInfo && contactInfo.username && contactInfo.publicKey && contactInfo.address) {
     try {
-      Contact.add({
-        username: contactInfo.username,
-        publicKey: contactInfo.publicKey,
-        mamRoot
-      });
-
       const conversation = createChannel(iotaSettings);
       Conversation.add(conversation);
 
@@ -124,13 +118,12 @@ export const decryptContactRequest = async (iotaSettings, messageData, privateKe
   return null;
 };
 
-export const getContactRequest = async (iotaSettings, passwordHash) => {
+export const getContactRequest = async (iotaSettings, seed) => {
   const { privateKey } = Account.data;
   const conversations = [];
   const transactions = Account.data.transactions.filter(
     transaction => transaction.address === Account.data.address.substring(0, 81)
   );
-  const seed = await getSeed(passwordHash, 'string');
   const bundles = groupBy(transactions, 'bundle');
 
   await Promise.all(

@@ -52,13 +52,13 @@ const Login = props => {
 
       const { mamRoot, address, username } = Account.data;
       dispatch(setAccountInfo({ mamRoot, address, username }));
-
+      console.log(passwordHash);
       const seed = await getSeed(passwordHash, 'string');
 
       try {
         await Promise.all([
           getTransactionsFromAccount(iotaSettings, seed),
-          getContactRequest(iotaSettings),
+          getContactRequest(iotaSettings, seed),
           fetchNewMessagesFromAllConversation(iotaSettings),
           fetchNewChannelFromAllConversation(iotaSettings)
         ]);

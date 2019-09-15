@@ -53,7 +53,6 @@ const ConversationList = ({ updateConversationAddress }) => {
       if (!fetchedData) {
         dispatch(notify('error', 'Cannot find information for this address'));
       } else {
-        fetchedData.mamRoot = address;
         console.log(fetchedData);
         setNewContact(fetchedData);
         setIsCheckingSuccess(true);
@@ -89,7 +88,6 @@ const ConversationList = ({ updateConversationAddress }) => {
         .catch(error => {
           console.log(error);
           dispatch(finishLoadingConversationList());
-          Contact.delete(newContact.mamRoot);
         });
     }
   };

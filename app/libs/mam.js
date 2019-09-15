@@ -1,18 +1,17 @@
 import { Mam as MAM } from '@iota/client-load-balancer';
 import { asciiToTrytes, trytes, trits } from '@iota/converter';
+import Curl from '@iota/curl';
 import { DEFAULT_DEPTH, DEFAULT_MIN_WEIGHT_MAGNITUDE, MAX_SEED_LENGTH } from '../constants/iota';
 import { randomBytes } from './crypto';
 import { byteToChar } from './converter';
-import Curl from '@iota/curl';
 
-export const getMamRoot = (iotaSettings, seed, count = 2) => {
+export const getMamRoot = (iotaSettings, seed, start = 0) => {
   const mamState = MAM.init(iotaSettings, seed);
-  mamState.channel.count = count;
-  mamState.channel.next_count = count;
+  mamState.channel.start = start;
   return MAM.getRoot(mamState);
 };
 
-export const updateMamChannel = async (iotaSettings, data, seed, mode, sideKey, start = 0, count = 2, index = 0) => {
+export const updateMamChannel = async (iotaSettings, data, seed, mode, sideKey, start = 0, index = 0) => {
   if (mode === 'restricted' && !sideKey) {
     throw new Error('Restricted mode requires side key');
   }
@@ -22,8 +21,6 @@ export const updateMamChannel = async (iotaSettings, data, seed, mode, sideKey, 
   } else {
     mamState = MAM.changeMode(mamState, mode);
   }
-  mamState.channel.count = count;
-  mamState.channel.next_count = count;
   mamState.channel.index = index;
   if (start) mamState.channel.start = start - 1;
 

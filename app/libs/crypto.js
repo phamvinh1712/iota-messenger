@@ -3,8 +3,9 @@ import { MAX_SEED_LENGTH, ALIAS_REALM } from '../constants/iota';
 import { generateAddress } from './iota';
 import { Account, Contact } from '../storage';
 import { byteToChar } from './converter';
-import { updateMamChannel } from './mam';
+import { getMamRoot, updateMamChannel } from './mam';
 import { sendConversationRequest } from './contact';
+import { Mam as MAM } from '@iota/client-load-balancer';
 
 const NodeRSA = require('node-rsa');
 
@@ -67,7 +68,7 @@ export const encrypt = async (contentPlain, hash) => {
   const iv = crypto.getRandomValues(new Uint8Array(12));
   const ivHex = iv.toString();
 
-  const algorithm = { name: 'AES-GCM', iv };
+  const algorithm = { name: 'AES-GCM', iv: iv };
 
   const key = await crypto.subtle.importKey('raw', hash, algorithm, false, ['encrypt']);
 
@@ -82,6 +83,9 @@ export const decrypt = async (cipherText, hash) => {
   const cipherParts = cipherText.split('|');
 
   if (cipherParts.length !== 2 || typeof hash !== 'object') {
+    console.log('first');
+    console.log(cipherParts.length);
+    console.log(hash);
     throw new Error('Wrong password');
   }
   try {
@@ -218,18 +222,27 @@ export const addAccount = async (iotaSettings, username, seed, passwordHash) => 
   const stringSeed = seed.map(byteToChar).join('');
   const address = await generateAddress(iotaSettings, stringSeed);
 
-  const { publicKey, privateKey } = generateKeyPair();
-  const sideKey = randomBytes(MAX_SEED_LENGTH, 27)
+  let { publicKey, privateKey } = generateKeyPair();
+  let sideKey = randomBytes(MAX_SEED_LENGTH, 27)
     .map(byteToChar)
     .join('');
 
+  const keys = await getKeysFromMam(iotaSettings, stringSeed);
+  if (keys) {
+    publicKey = keys.publicKey;
+    privateKey = keys.privateKey;
+    sideKey = keys.sideKey;
+  } else {
+    await updateMamChannel(iotaSettings, { privateKey, sideKey }, stringSeed, 'private');
+  }
+
   let accountData = { username, publicKey, address };
   try {
-    await updateMamChannel(iotaSettings, { privateKey, sideKey }, stringSeed, 'private');
-    const mamRoot = await updateMamChannel(iotaSettings, accountData, stringSeed, 'private');
+    await updateMamChannel(iotaSettings, accountData, stringSeed, 'private');
+    const mamRoot = getMamRoot(iotaSettings, stringSeed, 1);
     accountData = { ...accountData, sideKey, mamRoot, privateKey };
     Account.update(accountData);
-    Contact.add({ username, publicKey, mamRoot });
+    Contact.add({ username, publicKey, mamRoot, address });
     return true;
   } catch (e) {
     throw new Error(e);
@@ -296,7 +309,7 @@ export const updatePassword = async (hash, hashNew) => {
   return true;
 };
 
-export const generateKeyPair = passwordHash => {
+export const generateKeyPair = () => {
   const rsa = new NodeRSA({ b: 512 });
   const publicKey = asciiToTrytes(rsa.exportKey('public'));
   const privateKey = asciiToTrytes(rsa.exportKey('private'));
@@ -334,7 +347,7 @@ export const getSeed = async (passwordHash, format) => {
   if (!vault) {
     throw new Error('No seed');
   }
-
+  console.log(passwordHash);
   const decryptedVault = await decrypt(vault, passwordHash);
   if (format && format === 'string') {
     return decryptedVault.map(byteToChar).join('');
@@ -348,4 +361,21 @@ export const getKey = async (passwordHash, type) => {
     throw new Error(`No ${type} key`);
   }
   return key;
+};
+
+export const getKeysFromMam = async (iotaSettings, seed) => {
+  MAM.init(iotaSettings, seed);
+  const privateRoot = getMamRoot(iotaSettings, seed);
+  const privateMessages = await MAM.fetch(privateRoot, 'private');
+  console.log(privateMessages);
+  if (privateMessages && privateMessages.length >= 2) {
+    const parseKeys = JSON.parse(trytesToAscii(privateMessages[0]));
+    if (parseKeys.privateKey && parseKeys.sideKey) {
+      const parsePublicData = JSON.parse(trytesToAscii(privateMessages[privateMessages.length - 1]));
+      if (parsePublicData.username && parsePublicData.publicKey && parsePublicData.address) {
+        return { privateKey: parseKeys.privateKey, sideKey: parseKeys.sideKey, publicKey: parsePublicData.publicKey };
+      }
+    }
+  }
+  return null;
 };
