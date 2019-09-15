@@ -225,6 +225,7 @@ export const addAccount = async (iotaSettings, username, seed, passwordHash) => 
 
   let accountData = { username, publicKey, address };
   try {
+    await updateMamChannel(iotaSettings, { privateKey, sideKey }, stringSeed, 'private');
     const mamRoot = await updateMamChannel(iotaSettings, accountData, stringSeed, 'private');
     accountData = { ...accountData, sideKey, mamRoot, privateKey };
     Account.update(accountData);
