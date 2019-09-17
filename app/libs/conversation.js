@@ -57,9 +57,9 @@ export const fetchNewChannelFromConversation = async (iotaSettings, conversation
   const conversation = Conversation.getById(conversationSeed);
   let mamState = MAM.init(iotaSettings, conversationSeed);
   mamState = MAM.changeMode(mamState, 'restricted', conversation.sideKey);
-  if (conversation.channels.length) {
-    mamState.channel.start = conversation.channels.length;
-  }
+  // if (conversation.channels.length) {
+  //   mamState.channel.start = conversation.channels.length;
+  // }
   const root = MAM.getRoot(mamState);
   console.log('root:', root);
   try {
