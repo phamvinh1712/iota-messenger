@@ -74,7 +74,7 @@ export const sendConversationRequest = async (iotaSettings, passwordHash, mamRoo
 
 export const joinConversation = async (iotaSettings, seed, conversationSeed) => {
   const conversation = Conversation.getById(conversationSeed);
-  const selfChannel = createChannel();
+  const selfChannel = createChannel(iotaSettings);
   Conversation.addChannel(conversation.seed, { ...selfChannel, self: true });
   const { sideKey, mamRoot, privateKey } = Account.data;
 
