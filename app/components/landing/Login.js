@@ -52,7 +52,7 @@ const Login = props => {
 
       const { mamRoot, address, username } = Account.data;
       dispatch(setAccountInfo({ mamRoot, address, username }));
-      console.log(passwordHash);
+
       const seed = await getSeed(passwordHash, 'string');
 
       try {

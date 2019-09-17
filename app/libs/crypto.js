@@ -347,7 +347,7 @@ export const getSeed = async (passwordHash, format) => {
   if (!vault) {
     throw new Error('No seed');
   }
-  console.log(passwordHash);
+
   const decryptedVault = await decrypt(vault, passwordHash);
   if (format && format === 'string') {
     return decryptedVault.map(byteToChar).join('');

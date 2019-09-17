@@ -51,7 +51,7 @@ export const sendConversationRequest = async (iotaSettings, passwordHash, mamRoo
 
       const seed = await getSeed(passwordHash, 'string');
 
-      requestMessage.senderRoot = encryptRSA(getMamRoot(iotaSettings, seed), contactInfo.publicKey);
+      requestMessage.senderRoot = encryptRSA(getMamRoot(iotaSettings, seed, 1), contactInfo.publicKey);
 
       const transfer = [
         {
@@ -98,15 +98,17 @@ export const joinConversation = async (iotaSettings, seed, conversationSeed) => 
 };
 
 export const decryptContactRequest = async (iotaSettings, messageData, privateKey) => {
+  console.log(messageData);
   if (messageData.senderRoot && messageData.sideKey && messageData.mamRoot && messageData.seed) {
     const decryptedData = {};
 
     Object.keys(messageData).forEach(key => {
       decryptedData[key] = decryptRSA(messageData[key], privateKey);
     });
-
+    console.log(decryptedData);
     try {
       const sender = await fetchContactInfo(iotaSettings, decryptedData.senderRoot);
+      console.log(sender);
       decryptedData.sender = sender;
       if (!sender) return null;
     } catch (e) {
