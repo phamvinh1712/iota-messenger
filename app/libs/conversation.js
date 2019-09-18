@@ -13,10 +13,9 @@ export const fetchNewMessagesFromConversation = async (iotaSettings, conversatio
       conversation.channels.map(async channel => {
         let mamState = MAM.init(iotaSettings, channel.seed);
         mamState = MAM.changeMode(mamState, 'restricted', channel.sideKey);
-        let index = 0;
+        console.log('channel',channel);
         if (channel.messages.length) {
           mamState.channel.start = channel.messages.length;
-          index = channel.messages.length;
         }
         const root = MAM.getRoot(mamState);
         console.log('root:', root);
@@ -28,9 +27,8 @@ export const fetchNewMessagesFromConversation = async (iotaSettings, conversatio
               result.messages.map(async message => {
                 const parsedMessage = JSON.parse(trytesToAscii(message));
                 if (parsedMessage.content && parsedMessage.createdTime) {
-                  const messageObj = { ...parsedMessage, index };
+                  const messageObj = { ...parsedMessage };
                   Conversation.addMessage(conversationSeed, channel.mamRoot, messageObj);
-                  index += 1;
                 }
               })
             );
@@ -57,11 +55,8 @@ export const fetchNewChannelFromConversation = async (iotaSettings, conversation
   const conversation = Conversation.getById(conversationSeed);
   let mamState = MAM.init(iotaSettings, conversationSeed);
   mamState = MAM.changeMode(mamState, 'restricted', conversation.sideKey);
-  // if (conversation.channels.length) {
-  //   mamState.channel.start = conversation.channels.length;
-  // }
+
   const root = MAM.getRoot(mamState);
-  console.log('root:', root);
   try {
     const result = await MAM.fetch(root, 'restricted', conversation.sideKey);
     console.log(result);
@@ -72,9 +67,11 @@ export const fetchNewChannelFromConversation = async (iotaSettings, conversation
           if (parsedMessage.mamRoot && parsedMessage.sideKey && parsedMessage.ownerRoot && parsedMessage.signature) {
             const { mamRoot, sideKey, ownerRoot, signature } = parsedMessage;
             const contact = await fetchContactInfo(iotaSettings, ownerRoot);
-
+            console.log('parsedMessage', parsedMessage);
+            console.log('contact', contact);
             if (contact) {
               if (verifyRSA(mamRoot, contact.publicKey, signature)) {
+                console.log('verify');
                 Conversation.addChannel(conversation.seed, { owner: contact, mamRoot, sideKey });
               }
             }

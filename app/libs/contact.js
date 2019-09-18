@@ -5,8 +5,9 @@ import sortBy from 'lodash/sortBy';
 import trimEnd from 'lodash/trimEnd';
 import { sendTransfer } from './iota';
 import { Account, Contact, Conversation } from '../storage';
-import { decryptRSA, encryptRSA, getSeed, signRSA, verifyRSA } from './crypto';
+import { decryptRSA, encryptRSA, getSeed, signRSA } from './crypto';
 import { getMamRoot, updateMamChannel, createChannel } from './mam';
+import { fetchNewChannelFromConversation } from './conversation';
 
 export const fetchContactInfo = async (iotaSettings, mamRoot) => {
   const contact = Contact.getById(mamRoot);
@@ -165,30 +166,8 @@ export const getContactRequest = async (iotaSettings, seed) => {
           sideKey: conversation.sideKey,
           seed: conversation.seed
         });
-        const result = await MAM.fetch(conversation.mamRoot, 'restricted', conversation.sideKey);
-        if (result && result.messages) {
-          await Promise.all(
-            result.messages.map(async message => {
-              const parsedMessage = JSON.parse(trytesToAscii(message));
-              if (
-                parsedMessage.mamRoot &&
-                parsedMessage.sideKey &&
-                parsedMessage.ownerRoot &&
-                parsedMessage.signature
-              ) {
-                const { mamRoot, sideKey, ownerRoot, signature } = parsedMessage;
-                const contact = await fetchContactInfo(iotaSettings, ownerRoot);
-
-                if (contact) {
-                  if (verifyRSA(mamRoot, contact.publicKey, signature)) {
-                    Conversation.addChannel(conversation.seed, { owner: contact, mamRoot, sideKey });
-                  }
-                }
-              }
-            })
-          );
-          await joinConversation(iotaSettings, seed, conversation.seed);
-        }
+        await fetchNewChannelFromConversation(iotaSettings, conversation.seed);
+        await joinConversation(iotaSettings, seed, conversation.seed);
       }
     })
   );

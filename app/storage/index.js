@@ -234,7 +234,10 @@ class Conversation {
   static getConversationName(id) {
     const conversation = Conversation.getById(id);
     if (conversation) {
-      return conversation.channels.map(channel => channel.owner.username).join(',');
+      return conversation.channels
+        .filter(channel => !channel.self)
+        .map(channel => channel.owner.username)
+        .join(',');
     }
     return '';
   }

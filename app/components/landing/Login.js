@@ -59,7 +59,6 @@ const Login = props => {
         await Promise.all([
           getTransactionsFromAccount(iotaSettings, seed),
           getContactRequest(iotaSettings, seed),
-          fetchNewMessagesFromAllConversation(iotaSettings),
           fetchNewChannelFromAllConversation(iotaSettings)
         ]);
         updateContactData(iotaSettings);

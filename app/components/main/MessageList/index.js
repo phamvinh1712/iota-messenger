@@ -40,7 +40,7 @@ const MessageList = props => {
   useEffect(() => {
     if (currentConversation) {
       setMessages(Conversation.getMessagesFromId(currentConversation));
-      setConversationName(Conversation.getConversationName());
+      setConversationName(Conversation.getConversationName(currentConversation));
     }
   });
 

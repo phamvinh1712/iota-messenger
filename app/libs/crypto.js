@@ -338,7 +338,7 @@ export const signRSA = (message, privateKey) => {
 export const verifyRSA = (message, publicKey, signature) => {
   const rsa = new NodeRSA();
   rsa.importKey(trytesToAscii(publicKey), 'public');
-  return rsa.verify(message, signature);
+  return rsa.verify(message, Buffer.from(signature.data));
 };
 
 export const getSeed = async (passwordHash, format) => {
