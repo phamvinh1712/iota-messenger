@@ -8,6 +8,7 @@ import find from 'lodash/find';
 import orderBy from 'lodash/orderBy';
 import schemas, { STORAGE_PATH } from './schema';
 import { parse, serialise } from '../libs/utils';
+import { getAddress } from '../libs/mam';
 
 // eslint-disable-next-line import/no-mutable-exports
 let realm = {};
@@ -181,7 +182,7 @@ class Conversation {
     });
   }
 
-  static updateChannelAddress(id, channelId, address) {
+  static updateChannelAddress(id, channelId, root) {
     const conversation = Conversation.getById(id);
     if (!conversation) return;
     let channel = null;
@@ -192,7 +193,8 @@ class Conversation {
     });
     if (channel)
       realm.write(() => {
-        channel.nextAddress = address;
+        channel.nextAddress = getAddress(root);
+        channel.nextRoot = root;
       });
   }
 

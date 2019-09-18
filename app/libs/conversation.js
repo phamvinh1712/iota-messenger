@@ -11,13 +11,8 @@ export const fetchNewMessagesFromConversation = async (iotaSettings, conversatio
   if (conversation && conversation.channels.length) {
     await Promise.all(
       conversation.channels.map(async channel => {
-        let mamState = MAM.init(iotaSettings, channel.seed);
-        mamState = MAM.changeMode(mamState, 'restricted', channel.sideKey);
-        console.log('channel',channel);
-        if (channel.messages.length) {
-          mamState.channel.start = channel.messages.length;
-        }
-        const root = MAM.getRoot(mamState);
+        MAM.init(iotaSettings);
+        const root = channel.nextRoot || channel.mamRoot;
         console.log('root:', root);
         try {
           const result = await MAM.fetch(root, 'restricted', channel.sideKey);
@@ -33,7 +28,7 @@ export const fetchNewMessagesFromConversation = async (iotaSettings, conversatio
               })
             );
           }
-          Conversation.updateChannelAddress(conversationSeed, channel.mamRoot, getAddress(result.nextRoot));
+          Conversation.updateChannelAddress(conversationSeed, channel.mamRoot, result.nextRoot);
         } catch (e) {
           console.log(e);
         }

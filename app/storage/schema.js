@@ -60,6 +60,7 @@ export const ChannelSchema = {
     sideKey: { type: 'string', default: '' },
     seed: 'string?',
     mamRoot: { type: 'string', default: '' },
+    nextRoot: 'string?',
     nextAddress: 'string?',
     self: { type: 'bool', default: false },
     waiting: { type: 'bool', default: false }
