@@ -7,26 +7,23 @@ import { fetchContactInfo } from './contact';
 
 export const fetchNewMessagesFromConversation = async (iotaSettings, conversationSeed) => {
   const conversation = Conversation.getById(conversationSeed);
-  console.log(conversation);
   if (conversation && conversation.channels.length) {
     await Promise.all(
       conversation.channels.map(async channel => {
         MAM.init(iotaSettings);
-        const root = channel.nextRoot || channel.mamRoot;
-        console.log('root:', root);
+        const root = channel.messages.length ? channel.nextRoot : channel.mamRoot;
         try {
           const result = await MAM.fetch(root, 'restricted', channel.sideKey);
-          console.log(result);
           if (result && result.messages) {
-            await Promise.all(
-              result.messages.map(async message => {
-                const parsedMessage = JSON.parse(trytesToAscii(message));
-                if (parsedMessage.content && parsedMessage.createdTime) {
-                  const messageObj = { ...parsedMessage };
-                  Conversation.addMessage(conversationSeed, channel.mamRoot, messageObj);
-                }
-              })
-            );
+            let index = 0;
+            result.messages.forEach(message => {
+              const parsedMessage = JSON.parse(trytesToAscii(message));
+              if (parsedMessage.content && parsedMessage.createdTime) {
+                const messageObj = { ...parsedMessage, index };
+                Conversation.addMessage(conversationSeed, channel.mamRoot, messageObj);
+                index += 1;
+              }
+            });
           }
           Conversation.updateChannelAddress(conversationSeed, channel.mamRoot, result.nextRoot);
         } catch (e) {
@@ -54,7 +51,6 @@ export const fetchNewChannelFromConversation = async (iotaSettings, conversation
   const root = MAM.getRoot(mamState);
   try {
     const result = await MAM.fetch(root, 'restricted', conversation.sideKey);
-    console.log(result);
     if (result && result.messages) {
       await Promise.all(
         result.messages.map(async message => {
@@ -62,11 +58,8 @@ export const fetchNewChannelFromConversation = async (iotaSettings, conversation
           if (parsedMessage.mamRoot && parsedMessage.sideKey && parsedMessage.ownerRoot && parsedMessage.signature) {
             const { mamRoot, sideKey, ownerRoot, signature } = parsedMessage;
             const contact = await fetchContactInfo(iotaSettings, ownerRoot);
-            console.log('parsedMessage', parsedMessage);
-            console.log('contact', contact);
             if (contact) {
               if (verifyRSA(mamRoot, contact.publicKey, signature)) {
-                console.log('verify');
                 Conversation.addChannel(conversation.seed, { owner: contact, mamRoot, sideKey });
               }
             }

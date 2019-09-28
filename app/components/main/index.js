@@ -30,9 +30,7 @@ const Main = () => {
 
   useEffect(() => {
     dispatch(setSelfMamRoot(account.mamRoot));
-    conversationAddresses = Conversation.getAddress();
-    channelAddresses = Conversation.getChannelAddress();
-    console.log(conversationAddresses);
+    updateConversationAddress();
     const socket = zmq.socket('sub');
     getSeed(passwordHash, 'string')
       .then(seed => {
@@ -47,7 +45,7 @@ const Main = () => {
             if ((!data[7] && !data[6]) || data[7] === data[6]) {
               try {
                 await getTransactionsFromAccount(iotaSettings, seed);
-                await getContactRequest(iotaSettings,seed);
+                await getContactRequest(iotaSettings, seed);
                 conversationAddresses = Conversation.getAddress();
               } catch (e) {
                 console.log(e);

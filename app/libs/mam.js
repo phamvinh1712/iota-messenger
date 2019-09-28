@@ -1,5 +1,5 @@
 import { Mam as MAM } from '@iota/client-load-balancer';
-import { asciiToTrytes, trytes, trits } from '@iota/converter';
+import { asciiToTrytes, trytes as toTrytes, trits } from '@iota/converter';
 import Curl from '@iota/curl';
 import { DEFAULT_DEPTH, DEFAULT_MIN_WEIGHT_MAGNITUDE, MAX_SEED_LENGTH } from '../constants/iota';
 import { randomBytes } from './crypto';
@@ -28,7 +28,6 @@ export const updateMamChannel = async (iotaSettings, data, seed, mode, sideKey, 
   let result;
   try {
     if (mode === 'restricted' && sideKey) {
-      console.log('MAM sidekey', sideKey);
       result = await MAM.fetch(root, mode, sideKey);
     } else {
       result = await MAM.fetch(root, mode);
@@ -43,7 +42,7 @@ export const updateMamChannel = async (iotaSettings, data, seed, mode, sideKey, 
   const trytes = asciiToTrytes(JSON.stringify(data));
   const message = MAM.create(mamState, trytes);
   try {
-    console.log(message);
+    console.log('New message:', message);
     await MAM.attach(message.payload, message.address, DEFAULT_DEPTH, DEFAULT_MIN_WEIGHT_MAGNITUDE);
   } catch (e) {
     console.log(e);
@@ -71,7 +70,7 @@ export const createChannel = iotaSettings => {
 };
 
 export const getAddress = root => {
-  return trytes(hash(81, trits(root.slice())));
+  return toTrytes(hash(81, trits(root.slice())));
 };
 
 function hash(rounds, ...keys) {

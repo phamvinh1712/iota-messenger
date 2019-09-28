@@ -99,17 +99,14 @@ export const joinConversation = async (iotaSettings, seed, conversationSeed) => 
 };
 
 export const decryptContactRequest = async (iotaSettings, messageData, privateKey) => {
-  console.log(messageData);
   if (messageData.senderRoot && messageData.sideKey && messageData.mamRoot && messageData.seed) {
     const decryptedData = {};
 
     Object.keys(messageData).forEach(key => {
       decryptedData[key] = decryptRSA(messageData[key], privateKey);
     });
-    console.log(decryptedData);
     try {
       const sender = await fetchContactInfo(iotaSettings, decryptedData.senderRoot);
-      console.log(sender);
       decryptedData.sender = sender;
       if (!sender) return null;
     } catch (e) {
@@ -140,7 +137,6 @@ export const getContactRequest = async (iotaSettings, seed) => {
       try {
         const messageData = JSON.parse(trytesToAscii(trimmedMessage));
         const decryptedData = await decryptContactRequest(iotaSettings, messageData, privateKey);
-        console.log(decryptedData);
         if (decryptedData) conversations.push(decryptedData);
       } catch (e) {
         console.log(e);
@@ -150,7 +146,6 @@ export const getContactRequest = async (iotaSettings, seed) => {
 
   await Promise.all(
     conversations.map(async conversation => {
-      console.log(conversations);
       const checkContact = Contact.getById(conversation.senderRoot);
       if (!checkContact) {
         Contact.add({

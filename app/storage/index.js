@@ -126,6 +126,7 @@ class Conversation {
           addresses.push({ seed: conversation.seed, address: channel.nextAddress });
         });
       });
+      return addresses;
     }
   }
 
@@ -169,8 +170,9 @@ class Conversation {
       }
     });
     const { index } = messageData;
+    const data = { ...messageData, createdTime: new Date(messageData.createdTime) };
     if (channel && index >= channel.messages.length) {
-      realm.write(() => channel.messages.push(messageData));
+      realm.write(() => channel.messages.push(data));
     }
   }
 
@@ -224,8 +226,9 @@ class Conversation {
     if (conversation) {
       const messages = [];
       conversation.channels.forEach(channel => {
+        const sender = channel.self ? Contact.getById(Account.data.mamRoot) : channel.owner;
         channel.messages.forEach(message => {
-          messages.push({ content: message.content, createdTime: message.createdTime, sender: channel.owner });
+          messages.push({ content: message.content, createdTime: message.createdTime, sender });
         });
       });
       return orderBy(messages, ['createdTime'], ['asc']);
