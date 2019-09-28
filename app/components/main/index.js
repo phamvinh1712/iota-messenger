@@ -60,9 +60,9 @@ const Main = () => {
           }
           const channelAddress = find(channelAddresses, ['address', data[2]]);
           if (channelAddress && ((!data[7] && !data[6]) || data[7] === data[6])) {
-            await fetchNewMessagesFromConversation(iotaSettings, conversationAddress.seed);
+            await fetchNewMessagesFromConversation(iotaSettings, channelAddress.seed);
             channelAddresses = Conversation.getChannelAddress();
-            console.log(conversationAddresses);
+            console.log(channelAddresses);
           }
         });
       })

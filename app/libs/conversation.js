@@ -8,12 +8,14 @@ import { fetchContactInfo } from './contact';
 export const fetchNewMessagesFromConversation = async (iotaSettings, conversationSeed) => {
   const conversation = Conversation.getById(conversationSeed);
   if (conversation && conversation.channels.length) {
+    console.log(`Start fetching new message from seed ${conversationSeed}`);
     await Promise.all(
       conversation.channels.map(async channel => {
         MAM.init(iotaSettings);
-        const root = channel.messages.length ? channel.nextRoot : channel.mamRoot;
+        const root = channel.mamRoot;
         try {
           const result = await MAM.fetch(root, 'restricted', channel.sideKey);
+          console.log(`Channel ${channel.mamRoot} messages`, result);
           if (result && result.messages) {
             let index = 0;
             result.messages.forEach(message => {
@@ -52,6 +54,7 @@ export const fetchNewChannelFromConversation = async (iotaSettings, conversation
   try {
     const result = await MAM.fetch(root, 'restricted', conversation.sideKey);
     if (result && result.messages) {
+      console.log(`Conversation ${root} messages`, result);
       await Promise.all(
         result.messages.map(async message => {
           const parsedMessage = JSON.parse(trytesToAscii(message));
