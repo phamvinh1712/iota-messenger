@@ -125,9 +125,9 @@ const ConversationList = ({ updateConversationAddress }) => {
         const name = conversation.channels
           .filter(channel => !channel.self)
           .map(channel => channel.owner.username)
-          .join(',')
+          .join(',');
         return {
-          conversationName: name || '{Temporary name}',
+          conversationName: name || conversation.tempName || '{Temporary name}',
           lastMessage,
           seed: conversation.seed
         };

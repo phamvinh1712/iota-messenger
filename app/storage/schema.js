@@ -47,7 +47,8 @@ export const ConversationSchema = {
     mamRoot: 'string',
     sideKey: 'string',
     seed: 'string',
-    nextAddress: 'string?'
+    nextAddress: 'string?',
+    tempName: 'string?'
   }
 };
 

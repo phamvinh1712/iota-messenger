@@ -46,7 +46,7 @@ const Main = () => {
               try {
                 await getTransactionsFromAccount(iotaSettings, seed);
                 await getContactRequest(iotaSettings, seed);
-                conversationAddresses = Conversation.getAddress();
+                updateConversationAddress();
               } catch (e) {
                 console.log(e);
               }
@@ -55,14 +55,12 @@ const Main = () => {
           const conversationAddress = find(conversationAddresses, ['address', data[2]]);
           if (conversationAddress && ((!data[7] && !data[6]) || data[7] === data[6])) {
             await fetchNewChannelFromConversation(iotaSettings, conversationAddress.seed);
-            conversationAddresses = Conversation.getAddress();
-            console.log(conversationAddresses);
+            updateConversationAddress();
           }
           const channelAddress = find(channelAddresses, ['address', data[2]]);
           if (channelAddress && ((!data[7] && !data[6]) || data[7] === data[6])) {
             await fetchNewMessagesFromConversation(iotaSettings, channelAddress.seed);
-            channelAddresses = Conversation.getChannelAddress();
-            console.log(channelAddresses);
+            updateConversationAddress();
           }
         });
       })

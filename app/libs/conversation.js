@@ -54,7 +54,7 @@ export const fetchNewChannelFromConversation = async (iotaSettings, conversation
   try {
     const result = await MAM.fetch(root, 'restricted', conversation.sideKey);
     if (result && result.messages) {
-      console.log(`Conversation ${root} messages`, result);
+      console.log(`Conversation ${root} channels:`, result);
       await Promise.all(
         result.messages.map(async message => {
           const parsedMessage = JSON.parse(trytesToAscii(message));

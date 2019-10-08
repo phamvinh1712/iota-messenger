@@ -47,7 +47,7 @@ const Settings = props => {
       Electron.reload();
       dispatch(notify('success', 'Reset application sucess'));
     } catch (e) {
-      console.log('e');
+      console.log('Reset app error:', e);
       dispatch(notify('error', 'Reset application failed'));
     }
   };

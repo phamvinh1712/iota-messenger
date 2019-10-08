@@ -41,7 +41,7 @@ export const sendConversationRequest = async (iotaSettings, passwordHash, mamRoo
   if (contactInfo && contactInfo.username && contactInfo.publicKey && contactInfo.address) {
     try {
       const conversation = createChannel(iotaSettings);
-      Conversation.add(conversation);
+      Conversation.add({ ...conversation, tempName: contactInfo.username });
 
       const requestMessage = {};
       Object.keys(conversation).forEach(key => {
