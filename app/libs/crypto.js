@@ -6,6 +6,7 @@ import { byteToChar } from './converter';
 import { getMamRoot, updateMamChannel } from './mam';
 import { sendConversationRequest } from './contact';
 import { Mam as MAM } from '@iota/client-load-balancer';
+import { fetchConversations } from './conversation';
 
 const NodeRSA = require('node-rsa');
 
@@ -228,6 +229,7 @@ export const addAccount = async (iotaSettings, username, seed, passwordHash) => 
     .join('');
 
   const keys = await getKeysFromMam(iotaSettings, stringSeed);
+  console.log('keysFromMam', keys);
   if (keys) {
     publicKey = keys.publicKey;
     privateKey = keys.privateKey;
@@ -243,8 +245,11 @@ export const addAccount = async (iotaSettings, username, seed, passwordHash) => 
     accountData = { ...accountData, sideKey, mamRoot, privateKey };
     Account.update(accountData);
     Contact.add({ username, publicKey, mamRoot, address });
+    await fetchConversations(iotaSettings, stringSeed);
+    console.log('Account.data',Account.data);
     return true;
   } catch (e) {
+    console.log('addContact error', e);
     throw new Error(e);
   }
 };
@@ -366,9 +371,11 @@ export const getKey = async (passwordHash, type) => {
 export const getKeysFromMam = async (iotaSettings, seed) => {
   MAM.init(iotaSettings, seed);
   const privateRoot = getMamRoot(iotaSettings, seed);
-  const privateMessages = await MAM.fetch(privateRoot, 'private');
-  console.log(privateMessages);
-  if (privateMessages && privateMessages.length >= 2) {
+  console.log('privateRoot', privateRoot);
+  const result = await MAM.fetch(privateRoot, 'private');
+  console.log('privateMessages', result);
+  if (result && result.messages && result.messages.length >= 2) {
+    const privateMessages = result.messages;
     const parseKeys = JSON.parse(trytesToAscii(privateMessages[0]));
     if (parseKeys.privateKey && parseKeys.sideKey) {
       const parsePublicData = JSON.parse(trytesToAscii(privateMessages[privateMessages.length - 1]));

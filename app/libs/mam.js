@@ -11,7 +11,7 @@ export const getMamRoot = (iotaSettings, seed, start = 0) => {
   return MAM.getRoot(mamState);
 };
 
-export const updateMamChannel = async (iotaSettings, data, seed, mode, sideKey, start = 0, index = 0) => {
+export const updateMamChannel = async (iotaSettings, data, seed, mode, sideKey, start = 0, count = 1) => {
   if (mode === 'restricted' && !sideKey) {
     throw new Error('Restricted mode requires side key');
   }
@@ -21,8 +21,9 @@ export const updateMamChannel = async (iotaSettings, data, seed, mode, sideKey, 
   } else {
     mamState = MAM.changeMode(mamState, mode);
   }
-  mamState.channel.index = index;
-  if (start) mamState.channel.start = start - 1;
+  mamState.channel.count = count;
+  mamState.channel.next_count = count;
+  if (start) mamState.channel.start = start * count - 1;
 
   const root = MAM.getRoot(mamState);
   let result;
@@ -48,8 +49,9 @@ export const updateMamChannel = async (iotaSettings, data, seed, mode, sideKey, 
     console.log(e);
     throw new Error(e);
   }
-
-  console.log('MAM state', root);
+  console.log('MAM data', data);
+  console.log('MAM sideKey', sideKey);
+  console.log('MAM root', root);
   return root;
 };
 

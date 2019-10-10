@@ -1,7 +1,7 @@
 import { Mam as MAM } from '@iota/client-load-balancer';
 import { trytesToAscii } from '@iota/converter';
-import { Conversation } from '../storage';
-import { getAddress } from './mam';
+import { Account, Conversation } from '../storage';
+import { getAddress, getMamRoot } from './mam';
 import { verifyRSA } from './crypto';
 import { fetchContactInfo } from './contact';
 
@@ -27,7 +27,9 @@ export const fetchNewMessagesFromConversation = async (iotaSettings, conversatio
               }
             });
           }
-          Conversation.updateChannelAddress(conversationSeed, channel.mamRoot, result.nextRoot);
+          if (result.nextRoot) {
+            Conversation.updateChannelAddress(conversationSeed, channel.mamRoot, result.nextRoot);
+          }
         } catch (e) {
           console.log(e);
         }
@@ -70,7 +72,9 @@ export const fetchNewChannelFromConversation = async (iotaSettings, conversation
         })
       );
     }
-    Conversation.updateConversationAddress(conversationSeed, getAddress(result.nextRoot));
+    if (result.nextRoot) {
+      Conversation.updateConversationAddress(conversationSeed, getAddress(result.nextRoot));
+    }
     await fetchNewMessagesFromConversation(iotaSettings, conversationSeed);
   } catch (e) {
     console.log(e);
@@ -84,4 +88,49 @@ export const fetchNewChannelFromAllConversation = async iotaSettings => {
       await fetchNewChannelFromConversation(iotaSettings, key);
     })
   );
+};
+
+export const fetchConversations = async (iotaSettings, seed) => {
+  const { sideKey } = Account.data;
+
+  try {
+    let mamState = MAM.init(iotaSettings, seed);
+    mamState.channel.count = 2;
+    mamState = MAM.changeMode(mamState, 'restricted', sideKey);
+
+    const root = MAM.getRoot(mamState);
+    console.log('root', root);
+    const result = await MAM.fetch(root, 'restricted', sideKey);
+    console.log('conversations', result);
+    if (result && result.messages) {
+      result.messages.forEach(message => {
+        const parsedMessage = JSON.parse(trytesToAscii(message));
+        if (
+          parsedMessage.conversationSeed &&
+          parsedMessage.conversationSideKey &&
+          parsedMessage.channelSeed &&
+          parsedMessage.channelSideKey
+        ) {
+          const conversationRoot = getMamRoot(iotaSettings, parsedMessage.conversationSeed);
+          Conversation.add({
+            mamRoot: conversationRoot,
+            seed: parsedMessage.conversationSeed,
+            sideKey: parsedMessage.conversationSideKey
+          });
+          const channelRoot = getMamRoot(iotaSettings, parsedMessage.channelSeed);
+          const nextAddress = getAddress(channelRoot);
+          Conversation.addChannel(parsedMessage.conversationSeed, {
+            mamRoot: channelRoot,
+            seed: parsedMessage.channelSeed,
+            nextAddress,
+            sideKey: parsedMessage.channelSideKey,
+            self: true
+          });
+        }
+      });
+      console.log('Conversations after', Conversation.data);
+    }
+  } catch (e) {
+    console.log(e);
+  }
 };

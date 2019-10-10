@@ -63,7 +63,10 @@ export const sendConversationRequest = async (iotaSettings, passwordHash, mamRoo
       ];
 
       await sendTransfer(iotaSettings, seed, transfer);
-      if (join) await joinConversation(iotaSettings, seed, conversation.seed);
+      if (join) {
+        await joinConversation(iotaSettings, seed, conversation.seed);
+        await fetchNewChannelFromConversation(iotaSettings, conversation.seed);
+      }
     } catch (e) {
       console.log(e);
       throw new Error(e);
@@ -87,14 +90,14 @@ export const joinConversation = async (iotaSettings, seed, conversationSeed) => 
   };
   Conversation.addChannel(conversation.seed, { ...selfChannel, self: true });
   const conversationInfo = {
-    conversationSeed: conversation.mamRoot,
+    conversationSeed: conversation.seed,
     conversationSideKey: conversation.sideKey,
     channelSeed: selfChannel.seed,
     channelSideKey: selfChannel.sideKey
   };
   await Promise.all([
     updateMamChannel(iotaSettings, selfPayload, conversation.seed, 'restricted', conversation.sideKey),
-    updateMamChannel(iotaSettings, conversationInfo, seed, 'restricted', sideKey)
+    updateMamChannel(iotaSettings, conversationInfo, seed, 'restricted', sideKey, 0, 2)
   ]);
 };
 
@@ -161,8 +164,8 @@ export const getContactRequest = async (iotaSettings, seed) => {
           sideKey: conversation.sideKey,
           seed: conversation.seed
         });
-        await fetchNewChannelFromConversation(iotaSettings, conversation.seed);
         await joinConversation(iotaSettings, seed, conversation.seed);
+        await fetchNewChannelFromConversation(iotaSettings, conversation.seed);
       }
     })
   );

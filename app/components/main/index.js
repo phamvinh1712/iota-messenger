@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import zmq from 'zeromq';
 import find from 'lodash/find';
@@ -18,8 +18,8 @@ const Main = () => {
   const iotaSettings = getIotaSettings(settings);
   const dispatch = useDispatch();
   const account = Account.data;
-  let conversationAddresses;
-  let channelAddresses;
+  window.conversationAddresses = Conversation.getAddress();
+  window.channelAddresses = Conversation.getChannelAddress();
 
   function updateConversationAddress() {
     conversationAddresses = Conversation.getAddress();
