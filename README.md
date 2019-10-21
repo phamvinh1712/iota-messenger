@@ -1,4 +1,4 @@
-IOTA Messenger - Secured messaging application based on a new blockchain technology called IOTA
+IOTA Messenger - Secured desktop messaging application based on a new blockchain technology called IOTA
 
 Project for my Thesis at VGU
 
